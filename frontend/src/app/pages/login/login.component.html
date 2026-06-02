@@ -1,0 +1,47 @@
+<div class="page">
+  <main class="card">
+    <div class="brand-header">
+      <span class="brand-icon">🔏</span>
+      <div class="brand-text">
+        <span class="brand-name">DigiSign</span>
+        <span class="brand-tagline">Secure Document Signing</span>
+      </div>
+    </div>
+
+    <h1>{{ registerMode() ? 'Create account' : 'Welcome back' }}</h1>
+    <p class="sub">{{ registerMode() ? 'Create your account to start signing documents securely.' : 'Sign in to your account to continue.' }}</p>
+
+    <form autocomplete="off" (submit)="$event.preventDefault(); submit()">
+      <label class="field">
+        <span class="label">Username</span>
+        <input class="input" [(ngModel)]="username" name="username" type="text" autocomplete="off" placeholder="Enter your username" id="username-input" />
+      </label>
+
+      <label class="field">
+        <span class="label">Password</span>
+        <input class="input" type="password" [(ngModel)]="password" name="password" autocomplete="new-password" placeholder="Enter your password" id="password-input" />
+      </label>
+
+      <label class="field" *ngIf="registerMode()">
+        <span class="label">Signature Algorithm</span>
+        <select class="input" [(ngModel)]="registerAlgorithm" name="registerAlgorithm" id="algorithm-select">
+          <option value="RSA-SHA256">RSA-SHA256</option>
+          <option value="ECDSA-P256-SHA256">ECDSA-P256-SHA256</option>
+        </select>
+      </label>
+
+      <p class="hint" *ngIf="registerMode()">Password must be at least 8 characters.</p>
+
+      <p class="error" *ngIf="error()" id="login-error">{{ error() }}</p>
+
+      <div class="actions">
+        <button type="submit" class="btn primary" [disabled]="loading()" id="submit-btn">
+          {{ loading() ? 'Please wait…' : registerMode() ? 'Create Account' : 'Sign In' }}
+        </button>
+        <button type="button" class="btn secondary" (click)="toggleMode()" [disabled]="loading()" id="toggle-mode-btn">
+          {{ registerMode() ? 'Already have an account? Sign in' : 'New here? Create an account' }}
+        </button>
+      </div>
+    </form>
+  </main>
+</div>

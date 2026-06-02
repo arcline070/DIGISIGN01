@@ -1,0 +1,106 @@
+<header class="navbar" id="main-navbar">
+  <div class="navbar-inner">
+    <div class="navbar-brand">
+      <span class="brand-icon">🔏</span>
+      <div class="brand-text">
+        <span class="brand-name">DigiSign</span>
+        <span class="brand-tagline">Secure Document Signing</span>
+      </div>
+    </div>
+
+    <nav class="nav-links" id="nav-links">
+      <a routerLink="/sign" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" id="nav-sign">
+        <span class="nav-icon">✍️</span>
+        Sign
+      </a>
+      <a routerLink="/add-version" routerLinkActive="active" id="nav-add-version">
+        <span class="nav-icon">➕</span>
+        Add Version
+      </a>
+      <a routerLink="/verify" routerLinkActive="active" id="nav-verify">
+        <span class="nav-icon">🔍</span>
+        Verify
+      </a>
+      <a routerLink="/logs" routerLinkActive="active" id="nav-logs">
+        <span class="nav-icon">📋</span>
+        Logs
+      </a>
+    </nav>
+
+    <div class="navbar-right">
+      <span class="user-pill" *ngIf="auth.username() as u">
+        <span class="user-avatar">{{ u.charAt(0).toUpperCase() }}</span>
+        <span class="user-name">{{ u }}</span>
+      </span>
+
+      <div class="profile-menu-wrap">
+        <button type="button" class="menu-trigger" (click)="toggleProfileMenu()" aria-label="Profile menu" id="profile-menu-btn">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="8" cy="3" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
+            <circle cx="8" cy="13" r="1.5" fill="currentColor"/>
+          </svg>
+        </button>
+
+        <div class="profile-menu" *ngIf="profileMenuOpen()" id="profile-dropdown">
+          <div class="menu-header" *ngIf="auth.username() as u">
+            <span class="menu-avatar">{{ u.charAt(0).toUpperCase() }}</span>
+            <div class="menu-user-info">
+              <span class="menu-username">{{ u }}</span>
+              <span class="menu-role">Signed in</span>
+            </div>
+          </div>
+          <div class="menu-divider"></div>
+          <button type="button" class="menu-item" (click)="openCertificateModal()" id="view-cert-btn">
+            <span class="mi-icon">📄</span> View Certificate
+          </button>
+          <button type="button" class="menu-item" *ngIf="myCertificate() as cert" (click)="downloadPem('certificate.pem', cert)">
+            <span class="mi-icon">⬇️</span> Download Certificate (.pem)
+          </button>
+          <a class="menu-item" routerLink="/logs" (click)="closeProfileMenu()">
+            <span class="mi-icon">📋</span> View Logs
+          </a>
+          <div class="menu-divider"></div>
+          <button type="button" class="menu-item danger" (click)="auth.logout()" id="logout-btn">
+            <span class="mi-icon">🚪</span> Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Certificate Modal -->
+<div class="modal-backdrop" *ngIf="certificateModalOpen()" (click)="closeCertificateModal()"></div>
+<section class="modal-card" *ngIf="certificateModalOpen()" id="certificate-modal">
+  <div class="modal-header">
+    <h2>📄 Certificate</h2>
+    <button type="button" class="modal-close" (click)="closeCertificateModal()" aria-label="Close">✕</button>
+  </div>
+  <p class="modal-desc">Your self-signed X.509 certificate (PEM). Verification uses the certificate contained here.</p>
+  <div class="algo-row">
+    <div class="algo-left">
+      <div class="algo-label">Signing algorithm</div>
+      <div class="algo-value">{{ auth.signatureAlgorithm() }}</div>
+    </div>
+    <div class="algo-actions">
+      <button type="button" class="btn btn-secondary" (click)="setAlgorithm('RSA-SHA256')" [disabled]="algoSaving()">
+        Use RSA
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="setAlgorithm('ECDSA-P256-SHA256')" [disabled]="algoSaving()">
+        Use ECDSA
+      </button>
+    </div>
+  </div>
+  <p class="modal-desc" *ngIf="algoError()">{{ algoError() }}</p>
+  <textarea class="pem-display" rows="9" readonly [value]="myCertificate() || ''"></textarea>
+  <div class="modal-actions">
+    <button type="button" class="btn btn-secondary" *ngIf="myCertificate() as cert" (click)="copyCertificate(cert)">
+      📋 Copy
+    </button>
+    <button type="button" class="btn btn-secondary" *ngIf="myCertificate() as cert" (click)="downloadPem('certificate.pem', cert)">
+      ⬇ Download .pem
+    </button>
+    <button type="button" class="btn btn-ghost" (click)="closeCertificateModal()">Close</button>
+  </div>
+</section>

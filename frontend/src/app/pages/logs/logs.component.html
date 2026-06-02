@@ -1,0 +1,60 @@
+<app-navbar />
+
+<main class="page-container">
+  <div class="page-header">
+    <h1 id="page-title">Signature Logs</h1>
+    <p class="page-subtitle">Activity history for all signing and verification operations.</p>
+  </div>
+
+  <section class="card" id="logs-section">
+    <div class="toolbar">
+      <button type="button" class="btn btn-secondary" (click)="refresh()" [disabled]="loading()" id="refresh-btn">
+        <span class="btn-spinner-sm" *ngIf="loading()"></span>
+        {{ loading() ? 'Loading…' : '🔄 Refresh' }}
+      </button>
+      <div class="export-group">
+        <button type="button" class="btn btn-secondary" (click)="exportData('json', 'logs')">⬇ Logs JSON</button>
+        <button type="button" class="btn btn-secondary" (click)="exportData('csv', 'logs')">⬇ Logs CSV</button>
+        <button type="button" class="btn btn-secondary" (click)="exportData('json', 'signed_data')">⬇ Signed Data</button>
+      </div>
+    </div>
+
+    <p class="error-msg" *ngIf="error()">{{ error() }}</p>
+
+    <div class="table-wrap" *ngIf="!loading() || rows().length">
+      <table class="table" id="logs-table">
+        <thead>
+          <tr>
+            <th *ngIf="isAdmin()">User</th>
+            <th>Action</th>
+            <th>Status</th>
+            <th>Timestamp</th>
+            <th>Hash</th>
+            <th *ngIf="isAdmin()">IP</th>
+            <th *ngIf="isAdmin()">Failure Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of rows()" class="table-row">
+            <td *ngIf="isAdmin()">{{ row.username }}</td>
+            <td>
+              <span class="action-pill" [class.sign-action]="row.action === 'SIGN'" [class.verify-action]="row.action === 'VERIFY'">
+                {{ row.action }}
+              </span>
+            </td>
+            <td>
+              <span class="status-pill" [class.ok]="row.status === 'SUCCESS'" [class.bad]="row.status === 'FAILED'">
+                {{ row.status === 'SUCCESS' ? '✔ Success' : '✕ Failed' }}
+              </span>
+            </td>
+            <td>{{ row.timestamp | date : 'medium' }}</td>
+            <td class="mono hash-cell">{{ shortHash(row.data_hash) }}</td>
+            <td *ngIf="isAdmin()" class="mono">{{ row.ip_address || '—' }}</td>
+            <td *ngIf="isAdmin()">{{ row.failure_reason || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="empty-msg" *ngIf="!rows().length && !loading()">No log entries yet.</p>
+    </div>
+  </section>
+</main>

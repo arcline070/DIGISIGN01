@@ -1,0 +1,144 @@
+<app-navbar />
+
+<main class="page-container">
+  <div class="page-header">
+    <h1 id="page-title">Add New Version</h1>
+    <p class="page-subtitle">Append a new version to your document's chain. Each version links to the previous one, creating an immutable record.</p>
+  </div>
+
+  <!-- HASH CHAINING EXPLANATION -->
+  <section class="card info-card">
+    <h3>How Hash Chaining Works</h3>
+    <p>Every new version you add is cryptographically linked to the previous version:</p>
+    <div class="chain-visual">
+      <div class="chain-step">
+        <strong>V1 (Genesis)</strong>
+        <small>prev: GENESIS</small>
+      </div>
+      <div class="chain-arrow">→</div>
+      <div class="chain-step">
+        <strong>V2</strong>
+        <small>prev: V1's hash</small>
+      </div>
+      <div class="chain-arrow">→</div>
+      <div class="chain-step">
+        <strong>V3</strong>
+        <small>prev: V2's hash</small>
+      </div>
+    </div>
+    <p class="chain-info">If anyone tries to modify an old version, its hash changes, breaking the entire chain. This makes tampering impossible to hide.</p>
+  </section>
+
+  <section class="card" id="add-version-section">
+    <div class="info-banner">
+      <strong>Step 1:</strong> Select which document you want to version<br/>
+      <strong>Step 2:</strong> Add your updated content<br/>
+      <strong>Step 3:</strong> Click "Add Version" - it will be automatically linked to the previous version
+    </div>
+
+    <!-- DOCUMENT SELECTION -->
+    <div class="form-section">
+      <h3>📋 Which Document?</h3>
+      <p class="section-hint">Choose a document you already created, or paste the document ID if you know it</p>
+      
+      <select
+        class="text-input select-large"
+        id="document-id-select"
+        [ngModel]="documentId"
+        (ngModelChange)="documentId = $event"
+      >
+        <option value="">-- Select from your documents --</option>
+        <option *ngFor="let id of documentIds()" [value]="id">{{ id }}</option>
+      </select>
+
+      <div class="divider">or manually enter:</div>
+
+      <input
+        class="text-input input-large"
+        id="document-id-input"
+        type="text"
+        name="documentId"
+        [(ngModel)]="documentId"
+        placeholder="Paste the document ID here"
+      />
+
+      <p class="hint" *ngIf="documentIds().length === 0">
+        💡 No documents found. Make sure you created one with "Sign Document" first!
+      </p>
+    </div>
+
+    <!-- CONTENT SECTION -->
+    <div class="form-section">
+      <h3>📝 New Content</h3>
+      <p class="section-hint">Enter the updated content for this new version</p>
+      
+      <textarea
+        class="text-input textarea-large"
+        id="add-version-data-input"
+        [(ngModel)]="textData"
+        name="textData"
+        rows="6"
+        placeholder="Enter your updated content here...&#10;Example: Version 2 - Added section on X&#10;or paste JSON data"
+      ></textarea>
+    </div>
+
+    <!-- ACTION BUTTON -->
+    <div class="action-row">
+      <button type="button" class="btn btn-primary btn-lg" id="add-version-btn" (click)="addVersion()" [disabled]="addVersionButtonDisabled()">
+        {{ loading() ? '⏳ Appending to chain...' : '✓ Add This Version' }}
+      </button>
+    </div>
+
+    <!-- ERROR MESSAGE -->
+    <div class="banner banner-error" *ngIf="error()" id="add-version-error">
+      ❌ {{ error() }}
+    </div>
+
+    <!-- SUCCESS MESSAGE -->
+    <div class="result-section" *ngIf="signSuccess()" id="add-version-success">
+      <div class="banner banner-success">
+        ✅ Version added successfully!
+      </div>
+      <div class="success-info">
+        <p><strong>Your new version has been linked to the chain.</strong></p>
+        <p>It's now part of the immutable history. Download the signed document to verify or share.</p>
+      </div>
+      <button type="button" class="btn btn-download" id="download-add-version-btn" (click)="downloadSignedDocument()">
+        📥 Download Signed Document
+      </button>
+      <p class="hint">Keep this file to verify the complete chain later.</p>
+    </div>
+  </section>
+</main>
+
+<div class="modal-backdrop" *ngIf="algorithmModalOpen()" (click)="closeAlgorithmModal()"></div>
+<section class="modal-card" *ngIf="algorithmModalOpen()" id="algorithm-modal">
+  <div class="modal-header">
+    <h2>Select Signing Algorithm</h2>
+    <button type="button" class="modal-close" (click)="closeAlgorithmModal()" aria-label="Close">✕</button>
+  </div>
+  <p class="modal-desc">This version will be signed with the algorithm selected below.</p>
+
+  <div class="algo-list" *ngIf="!algoLoading(); else algoLoadingTpl">
+    <label class="algo-option" *ngFor="let a of supportedAlgorithms()">
+      <input
+        type="radio"
+        name="algo"
+        [value]="a.id"
+        [ngModel]="selectedAlgorithm()"
+        (ngModelChange)="selectedAlgorithm.set($event)"
+      />
+      <span class="algo-name">{{ a.label }}</span>
+    </label>
+  </div>
+  <ng-template #algoLoadingTpl>
+    <p class="modal-desc">Loading algorithms…</p>
+  </ng-template>
+
+  <div class="modal-actions">
+    <button type="button" class="btn btn-secondary" (click)="closeAlgorithmModal()" [disabled]="loading()">Cancel</button>
+    <button type="button" class="btn btn-primary" (click)="confirmAlgorithmAndAddVersion()" [disabled]="loading()">
+      {{ loading() ? 'Appending…' : 'Continue & Add Version' }}
+    </button>
+  </div>
+</section>
