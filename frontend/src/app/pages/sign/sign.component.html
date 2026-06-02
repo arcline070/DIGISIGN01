@@ -73,54 +73,7 @@
       ></textarea>
     </div>
 
-    <div class="doc-id-group">
-      <div class="field-label">Signing mode</div>
 
-      <div class="mode-options" role="radiogroup" aria-label="Signing mode">
-        <label class="mode-option">
-          <input
-            type="radio"
-            name="signMode"
-            value="new"
-            [(ngModel)]="mode"
-            (ngModelChange)="onModeChange($event)"
-          />
-          <span>New document</span>
-        </label>
-
-        <label class="mode-option">
-          <input
-            type="radio"
-            name="signMode"
-            value="append"
-            [(ngModel)]="mode"
-            (ngModelChange)="onModeChange($event)"
-          />
-          <span>Add version</span>
-        </label>
-      </div>
-
-      <div class="info-banner" *ngIf="mode === 'append'">
-        <span class="info-icon">⛓️</span>
-        <span>
-          This will append a new <b>version</b> to the same document chain.
-          The backend links versions using <b>prev_chain_hash → chain_hash</b>.
-        </span>
-      </div>
-
-      <div class="text-field" *ngIf="mode === 'append'">
-        <label class="field-label" for="sign-document-id-input">Document ID to extend</label>
-        <input
-          class="text-input"
-          id="sign-document-id-input"
-          type="text"
-          name="documentId"
-          [(ngModel)]="documentId"
-          placeholder="Paste the document ID from the previous signed JSON"
-        />
-        <p class="hint">All versions with the same document ID form an immutable hash chain.</p>
-      </div>
-    </div>
 
     <!-- Sign button -->
     <div class="action-row">
@@ -132,8 +85,7 @@
         [disabled]="signButtonDisabled()"
       >
         <span class="btn-spinner" *ngIf="loading()"></span>
-        <span *ngIf="!loading()">✍️</span>
-        {{ loading() ? 'Signing…' : (mode === 'append' ? 'Append Version' : 'Sign Document') }}
+        {{ loading() ? 'Signing…' : 'Sign Document' }}
       </button>
     </div>
 
@@ -184,15 +136,21 @@
   <p class="modal-desc">Choose the algorithm to use for this signature. You can add more algorithms later without changing the UI.</p>
 
   <div class="algo-list" *ngIf="!algoLoading(); else algoLoadingTpl">
-    <label class="algo-option" *ngFor="let a of supportedAlgorithms()">
-      <input
-        type="radio"
-        name="algo"
-        [value]="a.id"
-        [ngModel]="selectedAlgorithm()"
-        (ngModelChange)="selectedAlgorithm.set($event)"
-      />
-      <span class="algo-name">{{ a.label }}</span>
+    <label class="algo-option" *ngFor="let a of supportedAlgorithms()" [class.selected]="selectedAlgorithm() === a.id">
+      <div class="algo-radio">
+        <input
+          type="radio"
+          name="algo"
+          [value]="a.id"
+          [ngModel]="selectedAlgorithm()"
+          (ngModelChange)="selectedAlgorithm.set($event)"
+        />
+      </div>
+      <div class="algo-content">
+        <span class="algo-name">{{ a.label }}</span>
+        <span class="algo-desc" *ngIf="a.id === 'RSA-SHA256'">Standard security, widely compatible.</span>
+        <span class="algo-desc" *ngIf="a.id === 'ECDSA-P256-SHA256'">Modern, faster, smaller signature size.</span>
+      </div>
     </label>
   </div>
   <ng-template #algoLoadingTpl>

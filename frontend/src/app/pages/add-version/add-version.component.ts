@@ -27,7 +27,7 @@ export class AddVersionComponent implements OnInit {
   error = signal<string | null>(null);
   signSuccess = signal(false);
 
-  documentIds = signal<string[]>([]);
+  documentMetadata = signal<{ id: string; created_at: string; owner: string; filename?: string }[]>([]);
   algorithmModalOpen = signal(false);
   supportedAlgorithms = signal<SupportedAlgorithm[]>([]);
   selectedAlgorithm = signal<'RSA-SHA256' | 'ECDSA-P256-SHA256'>('RSA-SHA256');
@@ -57,9 +57,9 @@ export class AddVersionComponent implements OnInit {
   }
 
   loadExistingDocumentIds(): void {
-    this.api.listDocumentIds().subscribe({
-      next: (res) => this.documentIds.set(res.document_ids ?? []),
-      error: () => this.documentIds.set([]),
+    this.api.listDocumentIdsWithMetadata().subscribe({
+      next: (res) => this.documentMetadata.set(res.documents ?? []),
+      error: () => this.documentMetadata.set([]),
     });
   }
 

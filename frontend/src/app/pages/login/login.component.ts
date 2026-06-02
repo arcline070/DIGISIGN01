@@ -15,7 +15,6 @@ import { AuthService, SignatureAlgorithm } from '../../services/auth.service';
 export class LoginComponent implements OnInit {
   username = '';
   password = '';
-  registerAlgorithm: SignatureAlgorithm = 'RSA-SHA256';
   registerMode = signal(false);
   loading = signal(false);
   error = signal<string | null>(null);
@@ -42,7 +41,7 @@ export class LoginComponent implements OnInit {
     }
     this.loading.set(true);
     const req = this.registerMode()
-      ? this.auth.register(u, this.password, this.registerAlgorithm)
+      ? this.auth.register(u, this.password)
       : this.auth.login(u, this.password);
     req.pipe(finalize(() => this.loading.set(false))).subscribe({
       next: () => void this.router.navigate(['/']),

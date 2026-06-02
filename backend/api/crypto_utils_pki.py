@@ -3,7 +3,7 @@ from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.backends import default_backend
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import base64
 
 def create_ca_key_pair():
@@ -26,8 +26,8 @@ def create_ca_key_pair():
         .issuer_name(issuer)
         .public_key(ca_pub)
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=365*10))
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365*10))
         .add_extension(
             x509.BasicConstraints(ca=True, path_length=None), critical=True
         )
@@ -70,8 +70,8 @@ def sign_csr(ca_priv_pem: str, csr_pem: str, username: str):
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(csr.subject)
     builder = builder.issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'DEMO CA')]))
-    builder = builder.not_valid_before(datetime.utcnow())
-    builder = builder.not_valid_after(datetime.utcnow() + timedelta(days=365))
+    builder = builder.not_valid_before(datetime.now(timezone.utc))
+    builder = builder.not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))
     builder = builder.public_key(csr.public_key())
     builder = builder.serial_number(x509.random_serial_number())
     builder = builder.add_extension(

@@ -2,7 +2,7 @@
 
 import base64
 import hashlib
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from cryptography import x509
 from cryptography.fernet import Fernet
@@ -22,11 +22,13 @@ User = get_user_model()
 
 def _fernet() -> Fernet:
     env_key = (getattr(settings, "PRIVATE_KEY_FERNET_KEY", "") or "").strip()
-    if env_key:
-        return Fernet(env_key.encode("utf-8"))
-    # Dev fallback to keep app runnable; production should always set PRIVATE_KEY_FERNET_KEY.
-    derived = hashlib.sha256(settings.SECRET_KEY.encode("utf-8")).digest()
-    return Fernet(base64.urlsafe_b64encode(derived))
+    if not env_key:
+        raise RuntimeError(
+            "FERNET_KEY is not set. Private key encryption requires a Fernet key. "
+            "Generate one with: python -c \"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())\" "
+            "and add it to your .env file."
+        )
+    return Fernet(env_key.encode("utf-8"))
 
 
 def encrypt_private_key(private_key: str) -> str:
@@ -68,8 +70,8 @@ def _create_self_signed_user_certificate(private_key_pem: str, username: str) ->
         .issuer_name(issuer)
         .public_key(public_key)
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=365))
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))
         .sign(private_key, hashes.SHA256())
     )
     return cert.public_bytes(serialization.Encoding.PEM).decode("utf-8")

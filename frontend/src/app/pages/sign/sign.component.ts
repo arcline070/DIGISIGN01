@@ -22,15 +22,9 @@ export class SignComponent implements OnInit {
   /* ── State ─────────────────────────────────────── */
   selectedFile: File | null = null;
   textData = '';
-  documentId = '';
-
-  // Signing mode: create a new document chain (GENESIS) or append a new version to an existing chain.
-  mode: 'new' | 'append' = 'new';
 
   // Not used by the simplified UI (kept so existing logic still compiles).
   documentMetadata = signal<{ id: string; created_at: string; owner: string }[]>([]);
-
-
 
   loading = signal(false);
   error = signal<string | null>(null);
@@ -49,18 +43,6 @@ export class SignComponent implements OnInit {
   ngOnInit(): void {
     // Kept for backwards compatibility; UI no longer exposes the picker.
     this.loadExistingDocumentIds();
-  }
-
-  onModeChange(next: 'new' | 'append'): void {
-    this.error.set(null);
-    this.signSuccess.set(false);
-    this.signedPackageBlob.set(null);
-    this.revokeUrl();
-
-    // Avoid accidentally appending when switching back to New document.
-    if (next === 'new') {
-      this.documentId = '';
-    }
   }
   formatDocumentDate(value: string): string {
     const date = new Date(value);
@@ -147,15 +129,7 @@ export class SignComponent implements OnInit {
       formData.append('data', this.textData);
     }
 
-    if (this.mode === 'append') {
-      const docId = (this.documentId || '').trim();
-      if (!docId) {
-        this.loading.set(false);
-        this.error.set('Document ID is required to add a version.');
-        return;
-      }
-      formData.append('document_id', docId);
-    }
+
 
 
     const desired = this.selectedAlgorithm();
@@ -228,8 +202,7 @@ export class SignComponent implements OnInit {
 
   signButtonDisabled(): boolean {
     const hasData = this.selectedFile !== null || (this.textData || '').trim().length > 0;
-    const hasDocId = this.mode === 'new' ? true : (this.documentId || '').trim().length > 0;
-    return this.loading() || !hasData || !hasDocId;
+    return this.loading() || !hasData;
   }
 
 

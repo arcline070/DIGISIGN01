@@ -114,8 +114,8 @@ export class SignatureApiService {
     return this.http.get<{ document_ids: string[] }>(`${this.base}/my-document-ids`);
   }
 
-  listDocumentIdsWithMetadata(): Observable<{ documents: { id: string; created_at: string; owner: string }[] }> {
-    return this.http.get<{ documents: { id: string; created_at: string; owner: string }[] }>(`${this.base}/my-document-ids-with-metadata`);
+  listDocumentIdsWithMetadata(): Observable<{ documents: { id: string; created_at: string; owner: string; filename?: string }[] }> {
+    return this.http.get<{ documents: { id: string; created_at: string; owner: string; filename?: string }[] }>(`${this.base}/my-document-ids-with-metadata`);
   }
 
   addDocumentVersion(formData: FormData, documentId: string): Observable<Blob> {

@@ -6,6 +6,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 from typing import Literal, Tuple, Union
 
 from cryptography.hazmat.primitives import hashes, serialization
@@ -13,11 +14,13 @@ from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa
 from cryptography.hazmat.backends import default_backend
 from cryptography import x509
 from cryptography.x509.oid import NameOID
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import time
 
 DataInput = Union[str, bytes]
 AlgorithmName = Literal["RSA-SHA256", "ECDSA-P256-SHA256"]
+
+logger = logging.getLogger(__name__)
 
 # Original functions unchanged
 def sha256_hex(data: DataInput) -> str:
@@ -148,7 +151,7 @@ def verify_signature_with_algorithm(
             raise ValueError(f"Unsupported algorithm: {algorithm}")
         return True
     except Exception as e:
-        print("VERIFICATION FAILED:", str(e))
+        logger.warning("Signature verification failed: %s", e)
         return False
 
 # NEW PKI FUNCTIONS
@@ -171,8 +174,8 @@ def create_ca_key_pair():
         .issuer_name(issuer)
         .public_key(ca_pub)
         .serial_number(x509.random_serial_number())
-        .not_valid_before(datetime.utcnow())
-        .not_valid_after(datetime.utcnow() + timedelta(days=365*10))
+        .not_valid_before(datetime.now(timezone.utc))
+        .not_valid_after(datetime.now(timezone.utc) + timedelta(days=365*10))
         .add_extension(
             x509.BasicConstraints(ca=True, path_length=None), critical=True
         )
@@ -215,8 +218,8 @@ def sign_csr(ca_priv_pem: str, csr_pem: str):
     builder = x509.CertificateBuilder()
     builder = builder.subject_name(csr.subject)
     builder = builder.issuer_name(x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, 'DEMO CA')]))
-    builder = builder.not_valid_before(datetime.utcnow())
-    builder = builder.not_valid_after(datetime.utcnow() + timedelta(days=365))
+    builder = builder.not_valid_before(datetime.now(timezone.utc))
+    builder = builder.not_valid_after(datetime.now(timezone.utc) + timedelta(days=365))
     builder = builder.public_key(csr.public_key())
     builder = builder.serial_number(x509.random_serial_number())
     builder = builder.add_extension(

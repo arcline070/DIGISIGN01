@@ -48,7 +48,9 @@
         (ngModelChange)="documentId = $event"
       >
         <option value="">-- Select from your documents --</option>
-        <option *ngFor="let id of documentIds()" [value]="id">{{ id }}</option>
+        <option *ngFor="let doc of documentMetadata()" [value]="doc.id">
+          {{ doc.filename ? doc.filename + ' (' + doc.id + ')' : doc.id }}
+        </option>
       </select>
 
       <div class="divider">or manually enter:</div>
@@ -62,7 +64,7 @@
         placeholder="Paste the document ID here"
       />
 
-      <p class="hint" *ngIf="documentIds().length === 0">
+      <p class="hint" *ngIf="documentMetadata().length === 0">
         💡 No documents found. Make sure you created one with "Sign Document" first!
       </p>
     </div>
@@ -72,7 +74,60 @@
       <h3>📝 New Content</h3>
       <p class="section-hint">Enter the updated content for this new version</p>
       
+      <div
+        class="upload-zone"
+        [class.drag-active]="dragOver()"
+        [class.has-file]="selectedFile !== null"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+        id="add-version-drop-zone"
+      >
+        <div class="upload-content" *ngIf="!selectedFile">
+          <div class="upload-icon-wrap">
+            <svg class="upload-icon" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/>
+              <line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+          </div>
+          <p class="upload-title">Drop your file here</p>
+          <p class="upload-hint">or click to browse — any file type accepted</p>
+          <input
+            type="file"
+            class="file-hidden"
+            (change)="onFileChange($event)"
+            #addVersionFileInput
+            id="add-version-file-input"
+          />
+        </div>
+
+        <div class="file-preview" *ngIf="selectedFile">
+          <div class="file-icon-wrap">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>
+          </div>
+          <div class="file-info">
+            <span class="file-name">{{ selectedFile.name }}</span>
+            <span class="file-size">{{ (selectedFile.size / 1024).toFixed(1) }} KB</span>
+          </div>
+          <button type="button" class="btn-icon remove-file" (click)="clearFile()" aria-label="Remove file">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="or-divider" *ngIf="!selectedFile">
+        <span class="or-text">or enter text</span>
+      </div>
+
       <textarea
+        *ngIf="!selectedFile"
         class="text-input textarea-large"
         id="add-version-data-input"
         [(ngModel)]="textData"
@@ -120,15 +175,21 @@
   <p class="modal-desc">This version will be signed with the algorithm selected below.</p>
 
   <div class="algo-list" *ngIf="!algoLoading(); else algoLoadingTpl">
-    <label class="algo-option" *ngFor="let a of supportedAlgorithms()">
-      <input
-        type="radio"
-        name="algo"
-        [value]="a.id"
-        [ngModel]="selectedAlgorithm()"
-        (ngModelChange)="selectedAlgorithm.set($event)"
-      />
-      <span class="algo-name">{{ a.label }}</span>
+    <label class="algo-option" *ngFor="let a of supportedAlgorithms()" [class.selected]="selectedAlgorithm() === a.id">
+      <div class="algo-radio">
+        <input
+          type="radio"
+          name="algo"
+          [value]="a.id"
+          [ngModel]="selectedAlgorithm()"
+          (ngModelChange)="selectedAlgorithm.set($event)"
+        />
+      </div>
+      <div class="algo-content">
+        <span class="algo-name">{{ a.label }}</span>
+        <span class="algo-desc" *ngIf="a.id === 'RSA-SHA256'">Standard security, widely compatible.</span>
+        <span class="algo-desc" *ngIf="a.id === 'ECDSA-P256-SHA256'">Modern, faster, smaller signature size.</span>
+      </div>
     </label>
   </div>
   <ng-template #algoLoadingTpl>

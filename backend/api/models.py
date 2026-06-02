@@ -49,11 +49,11 @@ class SignatureLog(models.Model):
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="signature_logs",
     )
     action = models.CharField(max_length=16, choices=Action.choices, default=Action.SIGN)
-    data_hash = models.CharField(max_length=64, default="")
+    data_hash = models.CharField(max_length=64, default="", db_index=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     status = models.CharField(max_length=16, choices=Status.choices, default=Status.SUCCESS)
@@ -85,7 +85,7 @@ class AuditLog(models.Model):
     )
     action = models.CharField(max_length=16, choices=Action.choices)
     status = models.CharField(max_length=16, choices=Status.choices)
-    data_hash = models.CharField(max_length=64)
+    data_hash = models.CharField(max_length=64, db_index=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     failure_reason = models.TextField(blank=True)
@@ -121,21 +121,21 @@ class DocumentVersion(models.Model):
 
     record = models.ForeignKey(
         DocumentRecord,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="versions",
     )
     version_no = models.PositiveIntegerField()
     created_at = models.DateTimeField(default=timezone.now)
     signer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="signed_versions",
     )
     algorithm = models.CharField(max_length=32)
     certificate_fingerprint = models.CharField(max_length=128)
-    payload_hash = models.CharField(max_length=64)
+    payload_hash = models.CharField(max_length=64, db_index=True)
     prev_chain_hash = models.CharField(max_length=64, blank=True, default="")
-    chain_hash = models.CharField(max_length=64)
+    chain_hash = models.CharField(max_length=64, db_index=True)
     signature_b64 = models.TextField()
     metadata_json = models.JSONField(default=dict)
 
