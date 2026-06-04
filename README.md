@@ -38,10 +38,15 @@ The backend is built with Python and Django. It handles cryptographic signatures
 
 4. **Environment Variables:**
    - Copy the example environment file to `.env`:
-     ```bash
-     cp .env.example .env
-     ```
-   - *Note: Ensure your `.env` contains any required keys mentioned in the `.env.example`.*
+     - **Windows:**
+       ```bash
+       copy .env.example .env
+       ```
+     - **Mac/Linux:**
+       ```bash
+       cp .env.example .env
+       ```
+   - *Note: Ensure your `.env` contains any required keys mentioned in the `.env.example`. (If prompted to overwrite, you can safely skip this step if a `.env` already exists).*
 
 5. **Run Migrations:**
    ```bash
