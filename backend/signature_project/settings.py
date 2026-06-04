@@ -214,6 +214,9 @@ assert (
 # ---------------------------------------------------------------------------
 #  Issue #10 — Structured Logging
 # ---------------------------------------------------------------------------
+_log_dir = BASE_DIR / "logs"
+_log_dir.mkdir(exist_ok=True)
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
