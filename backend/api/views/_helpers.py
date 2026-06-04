@@ -123,6 +123,37 @@ def _normalize_text_for_diff(data_bytes: bytes, filename: str | None) -> tuple[s
     kind in {"json","csv","text","binary"}
     """
     name = (filename or "").lower()
+    
+    if name.endswith(".xlsx") or name.endswith(".xls"):
+        try:
+            import math
+            import pandas as pd
+            df_dict = pd.read_excel(io.BytesIO(data_bytes), sheet_name=None)
+            out = {}
+            for sheet, df in df_dict.items():
+                records = df.to_dict(orient="records")
+                # Sanitize every cell: NaN, Inf → None, Timestamp → ISO string
+                clean_records = []
+                for row in records:
+                    clean_row = {}
+                    for k, v in row.items():
+                        if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
+                            clean_row[k] = None
+                        elif hasattr(v, 'isoformat'):
+                            val = v.isoformat()
+                            if '+' not in val and not val.endswith('Z'):
+                                if '.' not in val:
+                                    val += '.000'
+                                val += 'Z'
+                            clean_row[k] = val
+                        else:
+                            clean_row[k] = v
+                    clean_records.append(clean_row)
+                out[sheet] = clean_records
+            return json.dumps(out, sort_keys=True, indent=2, ensure_ascii=False, default=str), "json"
+        except Exception as e:
+            return None, f"Excel parsing failed: {e}"
+
     try:
         text = data_bytes.decode("utf-8")
     except Exception:
@@ -156,45 +187,27 @@ def _flatten_json_for_diff(value, prefix: str = "$") -> dict[str, object]:
 
 
 def _json_localization_diff(expected_json_text: str, actual_json_text: str) -> dict:
+    from ..utils.diff_engine import localize_tampering
     expected_obj = json.loads(expected_json_text)
     actual_obj = json.loads(actual_json_text)
-    expected_map = _flatten_json_for_diff(expected_obj)
-    actual_map = _flatten_json_for_diff(actual_obj)
-    expected_keys = set(expected_map.keys())
-    actual_keys = set(actual_map.keys())
-    added = sorted(actual_keys - expected_keys)
-    deleted = sorted(expected_keys - actual_keys)
-    modified = sorted(
-        k for k in (expected_keys & actual_keys) if expected_map[k] != actual_map[k]
-    )
+    report = localize_tampering(expected_obj, actual_obj)
     return {
-        "added_fields": added,
-        "deleted_fields": deleted,
-        "modified_fields": modified,
+        "added_fields": list(report["added"].keys()),
+        "deleted_fields": list(report["deleted"].keys()),
+        "modified_fields": list(report["modified"].keys()),
         "summary": {
-            "added_count": len(added),
-            "deleted_count": len(deleted),
-            "modified_count": len(modified),
+            "added_count": len(report["added"]),
+            "deleted_count": len(report["deleted"]),
+            "modified_count": len(report["modified"]),
         },
     }
 
 
 def _json_tamper_report(original_text: str, current_text: str) -> dict:
+    from ..utils.diff_engine import localize_tampering
     original_obj = json.loads(original_text)
     current_obj = json.loads(current_text)
-    original_map = _flatten_json_for_diff(original_obj)
-    current_map = _flatten_json_for_diff(current_obj)
-    original_keys = set(original_map.keys())
-    current_keys = set(current_map.keys())
-
-    added = [f"{k}: {current_map[k]}" for k in sorted(current_keys - original_keys)]
-    deleted = [f"{k}: {original_map[k]}" for k in sorted(original_keys - current_keys)]
-    modified = [
-        {"from": f"{k}: {original_map[k]}", "to": f"{k}: {current_map[k]}"}
-        for k in sorted(original_keys & current_keys)
-        if original_map[k] != current_map[k]
-    ]
-    return {"added": added, "deleted": deleted, "modified": modified}
+    return localize_tampering(original_obj, current_obj)
 
 
 def _localize_tamper(
@@ -207,7 +220,7 @@ def _localize_tamper(
     original_text, original_kind = _normalize_text_for_diff(original_bytes, name)
     current_text, current_kind = _normalize_text_for_diff(current_bytes, name)
     if original_text is None or current_text is None:
-        return None, "Tamper localization supports only UTF-8 text/JSON/CSV."
+        return None, f"Localization failed: Original={original_kind}, Current={current_kind}"
 
     kind = "json" if original_kind == "json" or current_kind == "json" else (
         "csv" if original_kind == "csv" or current_kind == "csv" else "text"
@@ -216,7 +229,18 @@ def _localize_tamper(
     if kind == "json":
         return _json_tamper_report(original_text, current_text), None
 
-    # text/csv line-based diff
+    if kind == "csv":
+        import csv, io
+        from ..utils.diff_engine import localize_tampering
+        try:
+            r1 = list(csv.reader(io.StringIO(original_text)))
+            r2 = list(csv.reader(io.StringIO(current_text)))
+            return localize_tampering(r1, r2, path="Row"), None
+        except Exception:
+            # Fall back to text line-based diff if CSV parsing fails
+            pass
+
+    # text line-based diff
     report = detect_changes(original_text, current_text)
     return report, None
 
@@ -227,7 +251,7 @@ def _alg_spec_from_package(signature_algorithm: str) -> tuple[str, str]:
     Returns (internal_algorithm, key_type) where key_type in {"rsa","ecdsa"}.
     """
     alg = (signature_algorithm or "").strip()
-    if alg == "RSA-PKCS1v15":
+    if alg in ["RSA-PKCS1v15", "RSA-PSS"]:
         return "RSA-SHA256", "rsa"
     if alg == "ECDSA-SECP256R1":
         return "ECDSA-P256-SHA256", "ecdsa"
@@ -451,7 +475,10 @@ def _verify_signed_package(package: dict, request) -> tuple[bool, dict]:
             verify_public_key.verify(
                 signature_bytes,
                 data_bytes,
-                padding.PKCS1v15(),
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
                 hashes.SHA256(),
             )
         else:
@@ -479,7 +506,7 @@ def _verify_signed_package(package: dict, request) -> tuple[bool, dict]:
         "original_filename": original_filename or "",
         "structured_snapshot": structured_snapshot if isinstance(structured_snapshot, str) else "",
         "certificate_owner": certificate_owner,
-        "certificate_valid_until": cert.not_valid_after.date().isoformat() if cert is not None else "",
+        "certificate_valid_until": cert.not_valid_after_utc.date().isoformat() if cert is not None else "",
         "document_bytes": data_bytes,
         "certificate_pem": certificate_pem,
     }

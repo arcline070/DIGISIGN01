@@ -1,0 +1,44 @@
+<main class="page-container">
+  <div class="page-header" style="text-align: center; margin-top: 2rem;">
+    <h1 id="page-title">Document Verification System</h1>
+    <p class="page-subtitle">Scan to verify cryptographic authenticity.</p>
+  </div>
+
+  <section class="card" style="max-width: 600px; margin: 0 auto; text-align: center;">
+    <div *ngIf="loading()" style="padding: 3rem;">
+      <p style="color: var(--slate-500); font-size: 1.2rem;">Verifying cryptographic chain...</p>
+    </div>
+
+    <div *ngIf="!loading() && status() === 'authentic'" style="padding: 2rem;">
+      <div class="banner banner-success" style="justify-content: center; margin-bottom: 2rem;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span style="font-size: 1.2rem; margin-left: 0.5rem;">Authentic Document</span>
+      </div>
+      
+      <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 1.5rem; text-align: left;">
+        <p style="margin: 0.5rem 0;"><strong>Document ID:</strong> <span style="font-family: monospace; color: var(--slate-600);">{{ docDetails()?.document_id }}</span></p>
+        <p style="margin: 0.5rem 0;"><strong>Version:</strong> {{ docDetails()?.version }}</p>
+        <p style="margin: 0.5rem 0;"><strong>Signed By:</strong> {{ docDetails()?.owner }}</p>
+        <p style="margin: 0.5rem 0;"><strong>Timestamp:</strong> {{ docDetails()?.timestamp | date:'medium' }}</p>
+      </div>
+      
+      <p style="margin-top: 2rem; color: var(--slate-500);">This physical copy has been verified against the secure cryptographic chain.</p>
+    </div>
+
+    <div *ngIf="!loading() && status() === 'tampered'" style="padding: 2rem;">
+      <div class="banner banner-error" style="justify-content: center; margin-bottom: 2rem;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        <span style="font-size: 1.2rem; margin-left: 0.5rem;">Verification Failed</span>
+      </div>
+      <p style="font-size: 1.1rem; color: var(--danger-600);"><strong>Error:</strong> {{ message() }}</p>
+      <p style="margin-top: 1rem; color: var(--slate-500);">This document could not be cryptographically verified. It may be altered or fraudulent.</p>
+    </div>
+  </section>
+</main>

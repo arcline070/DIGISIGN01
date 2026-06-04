@@ -78,20 +78,20 @@ def test_all():
 
     # 6. Sign FILE
     print("\n[6] Sign file...")
-    with tempfile.NamedTemporaryFile(suffix=".txt", delete=False, mode="w") as f:
-        f.write("File content for signing test")
+    # Cleaned: Only create the JSON file, removed the legacy .txt file logic
+    with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
+        f.write('{"field1": "value1", "field2": "value2"}')
         tmp_path = f.name
     
     try:
         with open(tmp_path, "rb") as f:
-            resp = requests.post(f"{BASE}/sign-document", files={"file": ("test.txt", f)}, headers=headers)
+            resp = requests.post(f"{BASE}/sign-document", files={"file": ("test.json", f)}, headers=headers)
         assert resp.status_code == 200, f"Sign file failed: {resp.status_code} {resp.text}"
         signed_package = resp.json()
         assert "document" in signed_package
         assert "signature" in signed_package
         assert "public_key" in signed_package
         print(f"  ✔ File signed successfully")
-        print(f"  ✔ Package keys: {list(signed_package.keys())}")
     finally:
         os.unlink(tmp_path)
 
@@ -115,7 +115,11 @@ def test_all():
     # 8. Tamper with document in package — should FAIL
     print("\n[8] Verify tampered file package (should fail)...")
     tampered = signed_package.copy()
-    tampered["document"] = base64.b64encode(b"TAMPERED CONTENT").decode()
+    
+    # Cleaned: Removed the legacy b"TAMPERED CONTENT" override
+    tampered_json = b'{"field1": "tampered_value", "field3": "new_value"}'
+    tampered["document"] = base64.b64encode(tampered_json).decode()
+    
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False, mode="w") as f:
         json.dump(tampered, f)
         tampered_path = f.name
@@ -123,8 +127,21 @@ def test_all():
     try:
         with open(tampered_path, "rb") as f:
             resp = requests.post(f"{BASE}/verify-document", files={"file": ("signed.json", f)}, headers=headers)
-        assert resp.json()["status"] == "invalid", f"Expected invalid: {resp.json()}"
-        print(f"  ✔ Tampered file detected: {resp.json()['status']}")
+            
+        # Cleaned: Removed the old "invalid" assertion. Strictly testing the new 409 architecture.
+        assert resp.status_code == 409, f"Expected 409 Conflict, got {resp.status_code}. Output: {resp.text}"
+        assert resp.json()["status"] == "tampered", f"Expected tampered: {resp.json()}"
+        assert "tamper_report" in resp.json(), "Missing tamper_report in response"
+        
+        report = resp.json()["tamper_report"]
+        
+        # Verify that all 3 categories (modified, deleted, added) are populated correctly
+        assert "modified" in report and any("field1" in k for k in report["modified"]), "field1 should be modified"
+        assert "deleted" in report and any("field2" in k for k in report["deleted"]), "field2 should be deleted"
+        assert "added" in report and any("field3" in k for k in report["added"]), "field3 should be added"
+        
+        print(f"  ✔ Tampered file detected with 409 Conflict: {resp.json()['status']}")
+        print(f"  ✔ Tamper report generated successfully.")
     finally:
         os.unlink(tampered_path)
 

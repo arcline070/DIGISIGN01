@@ -193,4 +193,12 @@ export class SignatureApiService {
       responseType: 'blob',
     });
   }
+
+  /**
+   * Updates the user's preferred cryptographic algorithm.
+   * This triggers key regeneration and X.509 backfilling on the backend.
+   */
+  updateAlgorithm(algorithm: string): Observable<any> {
+    return this.http.patch(`${this.base}/profile/algorithm`, { algorithm });
+  }
 }

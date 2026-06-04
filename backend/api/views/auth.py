@@ -145,3 +145,26 @@ def timestamp(request):
         "timestamp_token": token,
         "ts_unix": int(time.time())
     })
+
+
+@api_view(["PATCH"])
+@permission_classes([IsAuthenticated])
+def update_algorithm(request):
+    algorithm = str(request.data.get("algorithm", "")).strip()
+    
+    if algorithm not in {"RSA-SHA256", "ECDSA-P256-SHA256"}:
+        return Response(
+            {"detail": "Algorithm must be RSA-SHA256 or ECDSA-P256-SHA256."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+        
+    # Delegate to the existing utility to regenerate keys and backfill the X.509 cert
+    profile = ensure_user_profile(request.user, preferred_algorithm=algorithm)
+    
+    return Response({
+        "status": "success",
+        "username": request.user.username,
+        "algorithm": profile.signature_algorithm,
+        "public_key": profile.public_key,  # FIXED: Removed the invalid _pem attribute
+        "message": "Algorithm updated successfully."
+    })

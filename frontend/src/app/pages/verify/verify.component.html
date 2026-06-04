@@ -3,13 +3,13 @@
 <main class="page-container">
   <div class="page-header">
     <h1 id="page-title">Verify Document</h1>
-    <p class="page-subtitle">Upload only <strong>signed_document.json</strong> for automatic verification and tamper analysis.</p>
+    <p class="page-subtitle">Upload the <strong>signed_document package</strong> for automatic verification and tamper analysis.</p>
   </div>
 
   <section class="card" id="verify-section">
     <div class="detail-card">
       <h3 class="detail-title">Upload Signed Package</h3>
-      <p class="page-subtitle">Upload signed_document.json generated during signing.</p>
+      <p class="page-subtitle">Upload the signed_document generated during signing.</p>
       <input type="file" accept=".json,application/json" (change)="onSignedPackageChange($event)" #signedPackageInput />
       <div class="file-info" *ngIf="signedPackageFile">
         <span class="file-name">{{ signedPackageFile.name }}</span>
@@ -23,6 +23,31 @@
         <span *ngIf="!verifyLoading()">🔍</span>
         {{ verifyLoading() ? 'Verifying…' : 'Verify Document' }}
       </button>
+
+      <button type="button" class="btn btn-secondary btn-lg btn-hacker" *ngIf="signedPackageFile && !isSimulatorOpen" (click)="openSimulator()">
+        🕵️ Open Tamper Simulator
+      </button>
+    </div>
+
+    <!-- Simulator UI -->
+    <div class="simulator-panel" *ngIf="isSimulatorOpen">
+      <div class="simulator-header">
+        <h3>
+          <span class="hacker-icon">⚠️</span> Intercept Terminal
+          <span class="badge" [ngClass]="simulatorMode === 'excel' ? 'badge-excel' : 'badge-json'">
+            {{ simulatorMode === 'excel' ? 'Excel Workbook Translated' : 'JSON Payload' }}
+          </span>
+        </h3>
+        <p>Edit the raw document data below. The app will securely re-encode the tampered data and trigger the tamper engine.</p>
+      </div>
+      <div class="banner banner-error" *ngIf="simulatorError">
+        {{ simulatorError }}
+      </div>
+      <textarea class="simulator-textarea" [(ngModel)]="simulatorText"></textarea>
+      <div class="simulator-actions">
+        <button type="button" class="btn btn-danger" (click)="simulateTampering()">💥 Simulate Tampering & Verify</button>
+        <button type="button" class="btn btn-secondary" (click)="closeSimulator()">Cancel</button>
+      </div>
     </div>
 
     <div class="banner banner-error" *ngIf="verifyError()" id="verify-error">
@@ -87,41 +112,44 @@
       </div>
     </div>
 
-    <div class="result-section" *ngIf="verifyDetails()?.status === 'tampered'" id="tamper-report">
-      <div class="banner banner-error">
-        <span>❌ Signature Invalid &nbsp; ⚠ Document Tampered</span>
-      </div>
-      <div class="detail-card" *ngIf="verifyDetails() as d">
-        <h3 class="detail-title">Tamper Analysis Report</h3>
-
-        <div class="detail-item full-width" *ngIf="d.tamper_report?.added?.length">
-          <span class="detail-label">Added Content</span>
-          <div class="diff-box diff-added">
-            <div class="diff-line" *ngFor="let x of d.tamper_report?.added">+ {{ x }}</div>
-          </div>
+    <div *ngIf="tamperReport" class="tamper-alert-panel" id="tamper-report">
+      <h2>⚠️ {{ verifyError() }}</h2>
+      
+      <div class="diff-container">
+        
+        <!-- Added Fields -->
+        <div class="diff-section" *ngIf="objectKeys(tamperReport.added).length > 0">
+          <h3>Items Added</h3>
+          <ul>
+            <li *ngFor="let key of objectKeys(tamperReport.added)" class="diff-item added">
+              <strong *ngIf="!isArray(tamperReport.added)">{{ key }}:</strong> {{ tamperReport.added[key] | json }}
+            </li>
+          </ul>
         </div>
 
-        <div class="detail-item full-width" *ngIf="d.tamper_report?.deleted?.length">
-          <span class="detail-label">Deleted Content</span>
-          <div class="diff-box diff-deleted">
-            <div class="diff-line" *ngFor="let x of d.tamper_report?.deleted">- {{ x }}</div>
-          </div>
+        <!-- Deleted Fields -->
+        <div class="diff-section" *ngIf="objectKeys(tamperReport.deleted).length > 0">
+          <h3>Items Deleted</h3>
+          <ul>
+            <li *ngFor="let key of objectKeys(tamperReport.deleted)" class="diff-item deleted">
+              <strong *ngIf="!isArray(tamperReport.deleted)">{{ key }}:</strong> <del>{{ tamperReport.deleted[key] | json }}</del>
+            </li>
+          </ul>
         </div>
 
-        <div class="detail-item full-width" *ngIf="d.tamper_report?.modified?.length">
-          <span class="detail-label">Modified Content</span>
-          <div class="diff-box diff-modified">
-            <div class="diff-line" *ngFor="let m of d.tamper_report?.modified">
-              <div class="mono">Old: {{ m.from }}</div>
-              <div class="mono">New: {{ m.to }}</div>
-              <div class="diff-sep"></div>
-            </div>
-          </div>
+        <!-- Modified Fields -->
+        <div class="diff-section" *ngIf="objectKeys(tamperReport.modified).length > 0">
+          <h3>Items Modified</h3>
+          <ul>
+            <li *ngFor="let key of objectKeys(tamperReport.modified)" class="diff-item modified">
+              <strong *ngIf="!isArray(tamperReport.modified)">Field [{{ key }}]:</strong> 
+              <span class="old-val">{{ tamperReport.modified[key].old | json }}</span> 
+              ➔ 
+              <span class="new-val">{{ tamperReport.modified[key].new | json }}</span>
+            </li>
+          </ul>
         </div>
 
-        <p class="page-subtitle" *ngIf="!d.tamper_report?.added?.length && !d.tamper_report?.deleted?.length && !d.tamper_report?.modified?.length">
-          {{ d.note || 'Signature mismatch detected.' }}
-        </p>
       </div>
     </div>
   </section>

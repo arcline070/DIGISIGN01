@@ -71,7 +71,7 @@ def _build_signed_package_payload(
         "timestamp": now.isoformat(),
         "algorithm": algorithm,
         "hash_algorithm": "SHA-256",
-        "signature_algorithm": "RSA-PKCS1v15"
+        "signature_algorithm": "RSA-PSS"
         if algorithm == "RSA-SHA256"
         else "ECDSA-SECP256R1",
         "document_id": document_id,
@@ -105,6 +105,7 @@ def _build_signed_package_payload(
     signed_package["version_no"] = str(version.version_no)
     signed_package["chain_hash"] = version.chain_hash
     signed_package["prev_chain_hash"] = version.prev_chain_hash
+    signed_package["verification_token"] = str(record.verification_token)
 
     SignedDocumentArtifact.objects.update_or_create(
         version=version,
@@ -244,7 +245,7 @@ def my_document_ids(request):
 @permission_classes([IsAuthenticated])
 def my_document_ids_with_metadata(request):
     """Return document IDs with metadata (creation date, owner)."""
-    records = DocumentRecord.objects.filter(owner=request.user).order_by("created_at")
+    records = DocumentRecord.objects.filter(owner=request.user).order_by("-created_at")
     documents = []
     for record in records:
         first_version = record.versions.order_by("version_no").first()
@@ -257,6 +258,7 @@ def my_document_ids_with_metadata(request):
             "created_at": record.created_at.isoformat(),
             "owner": record.owner.username,
             "filename": filename,
+            "version_count": record.versions.count(),
         })
     return Response({"documents": documents})
 

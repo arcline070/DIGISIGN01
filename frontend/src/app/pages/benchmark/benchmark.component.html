@@ -1,0 +1,104 @@
+<app-navbar />
+
+<main class="page-container">
+  <div class="page-header">
+    <h1 id="page-title">Performance Benchmarking</h1>
+    <p class="page-subtitle">Comprehensive analytical suite measuring cryptographic operations, diff engine stress tests, and historical chain latency.</p>
+  </div>
+
+  <section class="card">
+    <div class="benchmark-controls">
+      <div class="info-text">
+        <p *ngIf="activeTab() === 'crypto'"><strong>Diagnostics Scope:</strong> Runs 100 cryptographic iterations per algorithm with a dynamically generated key.</p>
+        <p *ngIf="activeTab() === 'diff'"><strong>Diagnostics Scope:</strong> Generates a 100-row dummy dataset and benchmarks JSON diffing vs Excel Openpyxl binary parsing and diffing.</p>
+        <p *ngIf="activeTab() === 'chain'"><strong>Diagnostics Scope:</strong> Computes the compounding latency of iterating and validating a historical document chain across exponentially increasing version counts.</p>
+      </div>
+      <button class="btn btn-primary btn-lg" (click)="runDiagnostics()" [disabled]="loading()">
+        {{ loading() ? '⏳ Running Diagnostics...' : '▶ Run Diagnostics' }}
+      </button>
+    </div>
+
+    <div class="error-banner" *ngIf="error()">
+      ❌ {{ error() }}
+    </div>
+
+    <!-- Tabs UI -->
+    <div class="tabs-container">
+      <button class="tab-btn" [class.active]="activeTab() === 'crypto'" (click)="setTab('crypto')">Cryptographic Showdown</button>
+      <button class="tab-btn" [class.active]="activeTab() === 'diff'" (click)="setTab('diff')">Diff Engine Stress</button>
+      <button class="tab-btn" [class.active]="activeTab() === 'chain'" (click)="setTab('chain')">Hash Chain Latency</button>
+    </div>
+
+    <!-- Tab 1: Crypto Chart -->
+    <div class="chart-container" *ngIf="activeTab() === 'crypto' && cryptoChartData()">
+      <canvas baseChart [data]="cryptoChartData()!" [options]="cryptoChartOptions" [type]="'bar'"></canvas>
+    </div>
+
+    <!-- Tab 1: Crypto Metrics Cards -->
+    <div class="metrics-grid" *ngIf="activeTab() === 'crypto' && cryptoMetrics()">
+      <div class="metric-card">
+        <span class="metric-label">RSA-PSS Sign</span>
+        <span class="metric-value">{{ cryptoMetrics()!.rsa_sign_tps | number:'1.0-0' }} <small>ops/sec</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">ECDSA Sign</span>
+        <span class="metric-value">{{ cryptoMetrics()!.ecdsa_sign_tps | number:'1.0-0' }} <small>ops/sec</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">RSA-PSS Verify</span>
+        <span class="metric-value">{{ cryptoMetrics()!.rsa_verify_tps | number:'1.0-0' }} <small>ops/sec</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">ECDSA Verify</span>
+        <span class="metric-value">{{ cryptoMetrics()!.ecdsa_verify_tps | number:'1.0-0' }} <small>ops/sec</small></span>
+      </div>
+    </div>
+
+    <!-- Tab 2: Diff Engine Chart -->
+    <div class="chart-container" *ngIf="activeTab() === 'diff' && diffChartData()">
+      <canvas baseChart [data]="diffChartData()!" [options]="barChartOptions" [type]="'bar'"></canvas>
+    </div>
+
+    <!-- Tab 2: Diff Metrics Cards -->
+    <div class="metrics-grid" *ngIf="activeTab() === 'diff' && diffMetrics()">
+      <div class="metric-card">
+        <span class="metric-label">JSON DIFF LATENCY</span>
+        <span class="metric-value">{{ diffMetrics()!.json_ms | number:'1.2-2' }} <small>ms</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">EXCEL TRANSLATION LATENCY</span>
+        <span class="metric-value">{{ diffMetrics()!.excel_ms | number:'1.2-2' }} <small>ms</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">TRANSLATION OVERHEAD</span>
+        <span class="metric-value">{{ diffMetrics()!.overhead_ms | number:'1.2-2' }} <small>ms</small></span>
+      </div>
+    </div>
+
+    <!-- Tab 3: Hash Chain Chart -->
+    <div class="chart-container" *ngIf="activeTab() === 'chain' && chainChartData()">
+      <canvas baseChart [data]="chainChartData()!" [options]="lineChartOptions" [type]="'line'"></canvas>
+    </div>
+
+    <!-- Tab 3: Hash Chain Metrics Cards -->
+    <div class="metrics-grid" *ngIf="activeTab() === 'chain' && chainMetrics()">
+      <div class="metric-card">
+        <span class="metric-label">BASE LATENCY (1 VERSION)</span>
+        <span class="metric-value">{{ chainMetrics()!.base_ms | number:'1.3-3' }} <small>ms</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">STRESS LATENCY (50 VERSIONS)</span>
+        <span class="metric-value">{{ chainMetrics()!.stress_ms | number:'1.3-3' }} <small>ms</small></span>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">TIME COMPLEXITY</span>
+        <span class="metric-value">O(N) Linear</span>
+      </div>
+    </div>
+
+    <!-- Placeholder -->
+    <div class="placeholder-container" *ngIf="!cryptoChartData() && !loading() && !error()">
+      <p class="placeholder-text">Click "Run Diagnostics" to begin performance tests.</p>
+    </div>
+  </section>
+</main>

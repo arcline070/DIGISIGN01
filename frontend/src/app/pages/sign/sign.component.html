@@ -1,5 +1,9 @@
-<app-navbar />
+<!-- Toast Notification -->
+<div *ngIf="toastMessage()" class="toast-notification">
+  {{ toastMessage() }}
+</div>
 
+<app-navbar />
 <main class="page-container">
   <div class="page-header">
     <h1 id="page-title">Sign Document</h1>
@@ -75,14 +79,34 @@
 
 
 
+    <!-- Algorithm Selection Controls -->
+    <div class="algorithm-settings" style="margin-top: 1rem; padding: 1rem; background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-sm);">
+      <label for="algorithm-select" style="font-size: 0.82rem; font-weight: 700; color: var(--slate-500); text-transform: uppercase; margin-right: 1rem;">Cryptographic Algorithm:</label>
+      <select 
+        id="algorithm-select" 
+        [ngModel]="activeAlgorithm()" 
+        (ngModelChange)="onAlgorithmChange($event)"
+        [disabled]="isUpdatingAlgorithm()"
+        style="padding: 0.5rem; border-radius: 4px; border: 1px solid var(--slate-300);">
+        <option value="RSA-SHA256">RSA (SHA-256)</option>
+        <option value="ECDSA-P256-SHA256">ECDSA (P-256 / SHA-256)</option>
+      </select>
+      <span class="loading-spinner" *ngIf="isUpdatingAlgorithm()" style="margin-left: 1rem; font-size: 0.82rem; color: var(--slate-500);">Regenerating keys...</span>
+    </div>
+
     <!-- Sign button -->
-    <div class="action-row">
+    <div class="action-row action-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+      <div class="algorithm-badge" style="font-size: 0.85rem; color: var(--slate-600);">
+        <span class="badge-icon">🔒</span>
+        Secured via <strong>{{ activeAlgorithm() }}</strong>
+      </div>
+      
       <button
         type="button"
         class="btn btn-primary btn-lg"
         id="sign-btn"
         (click)="signDocument()"
-        [disabled]="signButtonDisabled()"
+        [disabled]="signButtonDisabled() || isUpdatingAlgorithm()"
       >
         <span class="btn-spinner" *ngIf="loading()"></span>
         {{ loading() ? 'Signing…' : 'Sign Document' }}
@@ -101,66 +125,96 @@
 
     <!-- Success + download -->
     <div class="result-section" *ngIf="signSuccess()" id="sign-success">
-      <div class="banner banner-success">
+      
+      <!-- Visible UI Banner -->
+      <div class="banner banner-success" style="margin-bottom: 1.5rem;">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
           <polyline points="22 4 12 14.01 9 11.01"/>
         </svg>
         <span>Document signed successfully!</span>
       </div>
-      <button
-        type="button"
-        class="btn btn-download"
-        id="download-signed-btn"
-        (click)="downloadSignedDocument()"
-      >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        Download signed_document.json
-      </button>
-      <p class="hint">Share this file with anyone who needs to verify your document.</p>
+
+      <!-- Hidden PDF Content Wrapper -->
+      <div id="pdf-content" style="position: absolute; left: -9999px; top: -9999px; width: 800px; background-color: white; padding: 40px;">
+        <div class="banner banner-success">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>Document signed successfully!</span>
+        </div>
+
+        <div *ngIf="signedPackageData()" class="payload-container">
+          <h3 class="payload-header">CERTIFIED SIGNED DOCUMENT</h3>
+          <div class="payload-body">
+            <pre class="payload-pre-raw">{{ signedPackageData().original_text || (signedPackageData().structured_snapshot | json) || (signedPackageData() | json) }}</pre>
+          </div>
+        </div>
+
+        <div *ngIf="signedPackageData()" class="certification-metadata">
+          <div class="meta-row">
+            <span class="meta-label">Cryptographically Signed By</span>
+            <span class="meta-value">{{ signedPackageData().signed_by }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Verified Timestamp</span>
+            <span class="meta-value">{{ signedPackageData().timestamp | date:'medium' }}</span>
+          </div>
+          <div class="meta-row">
+            <span class="meta-label">Integrity Status</span>
+            <span class="meta-value valid">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: middle;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              Immutable & Verified
+            </span>
+          </div>
+        </div>
+        
+        <div *ngIf="verifyUrl()" style="display: flex; justify-content: center; align-items: center; margin-top: 1.5rem;">
+          <div style="text-align: center;">
+            <p style="font-size: 0.9rem; color: var(--slate-600); margin-bottom: 0.5rem; font-weight: 600;">Scan to Verify Authenticity</p>
+            <div style="background: white; padding: 10px; display: inline-block; border-radius: 8px; border: 1px solid var(--slate-200);">
+              <qrcode [qrdata]="verifyUrl()" [width]="150" [errorCorrectionLevel]="'M'" [elementType]="'canvas'"></qrcode>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 1rem; justify-content: center; margin-top: 1rem;">
+        <button
+          type="button"
+          class="btn btn-download"
+          id="download-signed-btn"
+          (click)="downloadSignedDocument()"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download JSON
+        </button>
+
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="exportToPDF()"
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Download Certified PDF
+        </button>
+      </div>
+      <p class="hint" style="margin-top: 1rem;">Share this file with anyone who needs to verify your document.</p>
     </div>
   </section>
 </main>
 
-<!-- Algorithm Modal -->
-<div class="modal-backdrop" *ngIf="algorithmModalOpen()" (click)="closeAlgorithmModal()"></div>
-<section class="modal-card" *ngIf="algorithmModalOpen()" id="algorithm-modal">
-  <div class="modal-header">
-    <h2>Select Signing Algorithm</h2>
-    <button type="button" class="modal-close" (click)="closeAlgorithmModal()" aria-label="Close">✕</button>
-  </div>
-  <p class="modal-desc">Choose the algorithm to use for this signature. You can add more algorithms later without changing the UI.</p>
 
-  <div class="algo-list" *ngIf="!algoLoading(); else algoLoadingTpl">
-    <label class="algo-option" *ngFor="let a of supportedAlgorithms()" [class.selected]="selectedAlgorithm() === a.id">
-      <div class="algo-radio">
-        <input
-          type="radio"
-          name="algo"
-          [value]="a.id"
-          [ngModel]="selectedAlgorithm()"
-          (ngModelChange)="selectedAlgorithm.set($event)"
-        />
-      </div>
-      <div class="algo-content">
-        <span class="algo-name">{{ a.label }}</span>
-        <span class="algo-desc" *ngIf="a.id === 'RSA-SHA256'">Standard security, widely compatible.</span>
-        <span class="algo-desc" *ngIf="a.id === 'ECDSA-P256-SHA256'">Modern, faster, smaller signature size.</span>
-      </div>
-    </label>
-  </div>
-  <ng-template #algoLoadingTpl>
-    <p class="modal-desc">Loading algorithms…</p>
-  </ng-template>
-
-  <div class="modal-actions">
-    <button type="button" class="btn btn-secondary" (click)="closeAlgorithmModal()" [disabled]="loading()">Cancel</button>
-    <button type="button" class="btn btn-primary" (click)="confirmAlgorithmAndSign()" [disabled]="loading()">
-      {{ loading() ? 'Signing…' : 'Continue & Sign' }}
-    </button>
-  </div>
-</section>

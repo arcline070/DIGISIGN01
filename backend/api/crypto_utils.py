@@ -43,7 +43,7 @@ def normalize_signable_payload(raw: str) -> str:
 def create_rsa_pem_pair() -> Tuple[str, str]:
     private_key = rsa.generate_private_key(
         public_exponent=65537,
-        key_size=2048,
+        key_size=3072,
         backend=default_backend(),
     )
     private_pem = private_key.private_bytes(
@@ -109,7 +109,10 @@ def sign_data_with_algorithm(
     if algorithm == "RSA-SHA256":
         return private_key.sign(
             payload,
-            padding.PKCS1v15(),
+            padding.PSS(
+                mgf=padding.MGF1(hashes.SHA256()),
+                salt_length=padding.PSS.MAX_LENGTH
+            ),
             hashes.SHA256(),
         )
     if algorithm == "ECDSA-P256-SHA256":
@@ -142,7 +145,10 @@ def verify_signature_with_algorithm(
             public_key.verify(
                 signature,
                 payload,
-                padding.PKCS1v15(),
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ),
                 hashes.SHA256(),
             )
         elif algorithm == "ECDSA-P256-SHA256":

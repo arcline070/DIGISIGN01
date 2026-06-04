@@ -49,7 +49,7 @@
       >
         <option value="">-- Select from your documents --</option>
         <option *ngFor="let doc of documentMetadata()" [value]="doc.id">
-          {{ doc.filename ? doc.filename + ' (' + doc.id + ')' : doc.id }}
+          {{ doc.filename ? doc.filename : 'Unnamed' }} — version {{ doc.version_count || 1 }}
         </option>
       </select>
 

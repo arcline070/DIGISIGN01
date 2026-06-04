@@ -27,7 +27,7 @@ export class AddVersionComponent implements OnInit {
   error = signal<string | null>(null);
   signSuccess = signal(false);
 
-  documentMetadata = signal<{ id: string; created_at: string; owner: string; filename?: string }[]>([]);
+  documentMetadata = signal<{ id: string; created_at: string; owner: string; filename?: string; version_count?: number }[]>([]);
   algorithmModalOpen = signal(false);
   supportedAlgorithms = signal<SupportedAlgorithm[]>([]);
   selectedAlgorithm = signal<'RSA-SHA256' | 'ECDSA-P256-SHA256'>('RSA-SHA256');
@@ -126,6 +126,7 @@ export class AddVersionComponent implements OnInit {
             const url = URL.createObjectURL(blob);
             this.signedPackageUrl.set(url);
             this.signSuccess.set(true);
+            this.loadExistingDocumentIds();
             this.closeAlgorithmModal();
           },
           error: (e) => {
@@ -174,9 +175,29 @@ export class AddVersionComponent implements OnInit {
   downloadSignedDocument(): void {
     const url = this.signedPackageUrl();
     if (!url) return;
+    
+    let baseName = 'signed_document';
+    let nextVersion = 2;
+    
+    const doc = this.documentMetadata().find(d => d.id === this.documentId);
+    if (doc) {
+      if (doc.filename) {
+        // Strip extension if it exists, e.g. "dummy.json" -> "dummy"
+        const lastDot = doc.filename.lastIndexOf('.');
+        if (lastDot > 0) {
+          baseName = 'signed_' + doc.filename.substring(0, lastDot);
+        } else {
+          baseName = 'signed_' + doc.filename;
+        }
+      }
+      if (doc.version_count) {
+        nextVersion = doc.version_count; // The version count was already refreshed to include the new version
+      }
+    }
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'signed_document.json';
+    a.download = `${baseName}_v${nextVersion}.json`;
     a.click();
   }
 

@@ -140,7 +140,7 @@ def verify_document(request):
         uploaded_prev = str(package.get("prev_chain_hash") or "").strip()
         uploaded_chain = str(package.get("chain_hash") or "").strip()
 
-        if ok and doc_id and package_version_no_raw.isdigit() and uploaded_chain:
+        if doc_id and package_version_no_raw.isdigit() and uploaded_chain:
             v_no = int(package_version_no_raw)
 
             # Locate the corresponding DB version so we can recompute the expected chain hash for that version
@@ -165,17 +165,29 @@ def verify_document(request):
                             timestamp_iso=db_version.created_at.isoformat(),
                         )
 
-                        # If the uploaded package's chain linkage is inconsistent, mark chain invalid.
-                        if (uploaded_prev or "") != expected_prev or uploaded_chain != expected_chain_hash:
+                        # If the uploaded package's chain linkage is inconsistent, or if the payload hash
+                        # of the uploaded document has been tampered with and no longer matches the block,
+                        # mark the chain as invalid.
+                        if (
+                            (uploaded_prev or "") != expected_prev 
+                            or uploaded_chain != expected_chain_hash
+                            or computed_hash != db_version.payload_hash
+                        ):
                             chain_verification["status"] = "invalid"
                             chain_verification["broken_at_version"] = v_no
 
 
         if ok:
             # Signature verification passed → return valid response with chain status
-            payload_data = package.get("data")
-            if payload_data is None:
-                payload_data = {}
+            document_bytes = details["document_bytes"]
+            original_data_is_binary = False
+            try:
+                original_text = document_bytes.decode("utf-8")
+            except Exception:
+                # Binary file (Excel, PDF, etc.) — send as base64
+                original_text = base64.b64encode(document_bytes).decode("ascii")
+                original_data_is_binary = True
+                
             verification_details = _build_verification_details(package)
             return Response(
                 {
@@ -183,7 +195,8 @@ def verify_document(request):
                     "message": "Document Integrity Verified",
                     "algorithm_used": details.get("signature_algorithm", ""),
                     "verification_details": verification_details,
-                    "original_data": json.dumps(payload_data),
+                    "original_data": original_text,
+                    "original_data_is_binary": original_data_is_binary,
                     "chain_verification": chain_verification,
                 }
             )
@@ -230,34 +243,44 @@ def verify_document(request):
         # Compare uploaded data against trusted backend-stored original bytes
         artifact = version.artifact
         trusted_bytes = bytes(artifact.original_bytes)
+        
         uploaded_b64 = (
             str(package.get("original_data") or "").strip()
             or str(package.get("signed_data") or "").strip()
             or str(package.get("document") or "").strip()
         )
         try:
-            uploaded_bytes = base64.b64decode(uploaded_b64, validate=True) if uploaded_b64 else b""
-        except Exception:
+            uploaded_bytes = base64.b64decode(uploaded_b64, validate=False) if uploaded_b64 else b""
+        except Exception as e:
             uploaded_bytes = b""
 
-        filename_for_diff = str(package.get("document_name") or artifact.original_filename or "")
-        tamper_report, err_msg = _localize_tamper(trusted_bytes, uploaded_bytes, filename_for_diff)
-
+        original_filename = package.get("original_filename") or ""
+        
+        tamper_report, err_msg = _localize_tamper(trusted_bytes, uploaded_bytes, original_filename)
+        
         if tamper_report is None:
-            tamper_report = {"added": [], "deleted": [], "modified": []}
-            note = err_msg or "Signature mismatch detected."
-        else:
-            note = ""
+            tamper_report = {"added": {}, "deleted": {}, "modified": {}}
+
+        # Safety net: scrub any nan/inf that survived into the report
+        import math
+        def _scrub(obj):
+            if isinstance(obj, dict):
+                return {k: _scrub(v) for k, v in obj.items()}
+            if isinstance(obj, list):
+                return [_scrub(v) for v in obj]
+            if isinstance(obj, float) and (math.isnan(obj) or math.isinf(obj)):
+                return None
+            return obj
+        tamper_report = _scrub(tamper_report)
 
         return Response(
             {
                 "status": "tampered",
-                "message": "Document modified",
+                "message": "Signature verification failed. Data modifications detected.",
                 "tamper_report": tamper_report,
-                "note": note,
-                "algorithm_used": package.get("signature_algorithm", ""),
                 "chain_verification": chain_verification,
-            }
+            },
+            status=status.HTTP_409_CONFLICT
         )
 
     except Exception as e:
@@ -357,7 +380,15 @@ def verify_stored_document(request):
         signature_bytes = base64.b64decode(artifact.signature_b64, validate=True)
         pub = cert.public_key()
         if artifact.algorithm == "RSA-SHA256":
-            pub.verify(signature_bytes, original_bytes, padding.PKCS1v15(), hashes.SHA256())
+            pub.verify(
+                signature_bytes, 
+                original_bytes, 
+                padding.PSS(
+                    mgf=padding.MGF1(hashes.SHA256()),
+                    salt_length=padding.PSS.MAX_LENGTH
+                ), 
+                hashes.SHA256()
+            )
         elif artifact.algorithm == "ECDSA-P256-SHA256":
             pub.verify(signature_bytes, original_bytes, ec.ECDSA(hashes.SHA256()))
         else:
@@ -849,3 +880,38 @@ def verify(request):
             },
             status=status.HTTP_400_BAD_REQUEST,
         )
+
+@api_view(["GET"])
+@permission_classes([AllowAny])
+def public_verify_token(request):
+    """
+    Public endpoint to verify a physical/exported document via its UUID token.
+    """
+    token_str = request.query_params.get("token")
+    if not token_str:
+        return Response({"status": "tampered", "message": "Missing token."}, status=400)
+    
+    try:
+        record = DocumentRecord.objects.get(verification_token=token_str)
+        # Fetch the latest version
+        latest_version = record.versions.order_by("-version_no").first()
+        if not latest_version:
+            return Response({"status": "tampered", "message": "Document empty."}, status=400)
+            
+        # Re-verify the chain cryptographically
+        result = verify_entire_chain(record.doc_id)
+        if not result["is_valid"]:
+            return Response({"status": "tampered", "message": "Chain corrupted."}, status=400)
+            
+        # Optional: You could also verify the artifact here if needed, but chain verification is strong enough.
+        return Response({
+            "status": "authentic", 
+            "document_id": record.doc_id,
+            "version": latest_version.version_no,
+            "owner": record.owner.username,
+            "timestamp": latest_version.created_at
+        })
+    except DocumentRecord.DoesNotExist:
+        return Response({"status": "tampered", "message": "Invalid token."}, status=404)
+    except Exception as e:
+        return Response({"status": "tampered", "message": str(e)}, status=500)

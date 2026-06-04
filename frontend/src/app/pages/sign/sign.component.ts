@@ -5,11 +5,14 @@ import { finalize } from 'rxjs/operators';
 import { NavbarComponent } from '../../components/navbar/navbar.component';
 import { AuthService } from '../../services/auth.service';
 import { SignatureApiService, SupportedAlgorithm } from '../../services/signature-api.service';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import { QRCodeComponent } from 'angularx-qrcode';
 
 @Component({
   selector: 'app-sign',
   standalone: true,
-  imports: [CommonModule, FormsModule, NavbarComponent],
+  imports: [CommonModule, FormsModule, NavbarComponent, QRCodeComponent],
   templateUrl: './sign.component.html',
   styleUrl: './sign.component.css',
 })
@@ -18,6 +21,36 @@ export class SignComponent implements OnInit {
 
   private readonly api = inject(SignatureApiService);
   private readonly auth = inject(AuthService);
+
+  exportToPDF(): void {
+    const data = document.getElementById('pdf-content');
+    if (!data) return;
+
+    html2canvas(data, { 
+      scale: 2,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+    }).then(canvas => {
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+
+      const pdfWidth = 210; // A4 width in mm
+      const pdfHeight = 297; // A4 height in mm
+
+      // Calculate ratio to fit exactly on one page
+      const ratio = Math.min(pdfWidth / canvas.width, pdfHeight / canvas.height);
+
+      const imgWidth = canvas.width * ratio;
+      const imgHeight = canvas.height * ratio;
+
+      // Center it horizontally
+      const marginX = (pdfWidth - imgWidth) / 2;
+
+      pdf.addImage(imgData, 'PNG', marginX, 10, imgWidth, imgHeight);
+      pdf.save('Certified_Document.pdf');
+    });
+  }
 
   /* ── State ─────────────────────────────────────── */
   selectedFile: File | null = null;
@@ -35,10 +68,17 @@ export class SignComponent implements OnInit {
   supportedAlgorithms = signal<SupportedAlgorithm[]>([]);
   selectedAlgorithm = signal<'RSA-SHA256' | 'ECDSA-P256-SHA256'>('RSA-SHA256');
   algoLoading = signal(false);
+  
+  // New toggles
+  activeAlgorithm = signal<string>('RSA-SHA256');
+  isUpdatingAlgorithm = signal(false);
+  toastMessage = signal<string | null>(null);
 
   /** Holds the signed package Blob for download */
   private signedPackageBlob = signal<Blob | null>(null);
   private signedPackageUrl = signal<string | null>(null);
+  verifyUrl = signal<string>('');
+  signedPackageData = signal<any>(null);
 
   ngOnInit(): void {
     // Kept for backwards compatibility; UI no longer exposes the picker.
@@ -58,6 +98,34 @@ export class SignComponent implements OnInit {
     });
   }
 
+  onAlgorithmChange(newAlgorithm: string): void {
+    if (this.activeAlgorithm() === newAlgorithm) return;
+    
+    this.isUpdatingAlgorithm.set(true);
+    
+    this.api.updateAlgorithm(newAlgorithm).subscribe({
+      next: (response) => {
+        this.activeAlgorithm.set(response.algorithm);
+        this.showToast(`Successfully switched to ${this.activeAlgorithm()}`);
+        this.isUpdatingAlgorithm.set(false);
+      },
+      error: (err) => {
+        console.error('Failed to update algorithm', err);
+        this.showToast('Failed to change algorithm. Please try again.');
+        this.isUpdatingAlgorithm.set(false);
+        
+        const current = this.activeAlgorithm();
+        this.activeAlgorithm.set(''); 
+        setTimeout(() => this.activeAlgorithm.set(current));
+      }
+    });
+  }
+
+  showToast(message: string): void {
+    this.toastMessage.set(message);
+    setTimeout(() => this.toastMessage.set(null), 3000);
+  }
+
   /* ── File selection ────────────────────────────── */
   onFileChange(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -75,46 +143,6 @@ export class SignComponent implements OnInit {
 
   /* ── Sign action ───────────────────────────────── */
   signDocument(): void {
-    // Open algorithm picker first
-    this.openAlgorithmModal();
-  }
-
-  private openAlgorithmModal(): void {
-    this.error.set(null);
-    this.signSuccess.set(false);
-    this.signedPackageBlob.set(null);
-    this.revokeUrl();
-
-    // Default selection to current session algo
-    this.selectedAlgorithm.set(this.auth.signatureAlgorithm());
-
-    this.algorithmModalOpen.set(true);
-    if (this.supportedAlgorithms().length === 0) {
-      this.algoLoading.set(true);
-      this.api
-        .supportedAlgorithms()
-        .pipe(finalize(() => this.algoLoading.set(false)))
-        .subscribe({
-          next: (res) => {
-            const list = Array.isArray(res.algorithms) ? res.algorithms : [];
-            this.supportedAlgorithms.set(list);
-          },
-          error: () => {
-            // fallback to defaults
-            this.supportedAlgorithms.set([
-              { id: 'RSA-SHA256', label: 'RSA-SHA256' },
-              { id: 'ECDSA-P256-SHA256', label: 'ECDSA-P256-SHA256' },
-            ]);
-          },
-        });
-    }
-  }
-
-  closeAlgorithmModal(): void {
-    this.algorithmModalOpen.set(false);
-  }
-
-  confirmAlgorithmAndSign(): void {
     this.error.set(null);
     this.signSuccess.set(false);
     this.signedPackageBlob.set(null);
@@ -129,26 +157,35 @@ export class SignComponent implements OnInit {
       formData.append('data', this.textData);
     }
 
-
-
-
-    const desired = this.selectedAlgorithm();
-    const current = this.auth.signatureAlgorithm();
-
-    const doSign = () => {
-      this.api
-        .signDocumentRaw(formData)
-        .pipe(finalize(() => this.loading.set(false)))
-        .subscribe({
-          next: (blob) => {
-            this.signedPackageBlob.set(blob);
-            const url = URL.createObjectURL(blob);
-            this.signedPackageUrl.set(url);
-            this.signSuccess.set(true);
-            this.closeAlgorithmModal();
-          },
-          error: (e) => {
-          // When responseType is 'blob', error body is a Blob — read it as text
+    this.api
+      .signDocumentRaw(formData)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: async (blob) => {
+          this.signedPackageBlob.set(blob);
+          const url = URL.createObjectURL(blob);
+          this.signedPackageUrl.set(url);
+          this.signSuccess.set(true);
+          
+          try {
+            const text = await blob.text();
+            const pkg = JSON.parse(text);
+            if (typeof pkg.structured_snapshot === 'string' && pkg.structured_snapshot) {
+              try {
+                pkg.structured_snapshot = JSON.parse(pkg.structured_snapshot);
+              } catch (e) {
+                // Ignore parse errors, fallback will catch it
+              }
+            }
+            this.signedPackageData.set(pkg);
+            if (pkg.verification_token) {
+              this.verifyUrl.set(window.location.origin + '/public-verify?token=' + pkg.verification_token);
+            }
+          } catch (err) {
+            console.error('Failed to parse package for verification token', err);
+          }
+        },
+        error: (e) => {
           if (e?.error instanceof Blob) {
             const reader = new FileReader();
             reader.onload = () => {
@@ -169,34 +206,28 @@ export class SignComponent implements OnInit {
               'Signing failed.';
             this.error.set(String(msg));
           }
-          },
-        });
-    };
-
-    if (desired !== current) {
-      this.api
-        .setSignatureAlgorithm(desired)
-        .subscribe({
-          next: () => {
-            this.auth.signatureAlgorithm.set(desired);
-            doSign();
-          },
-          error: () => {
-            this.loading.set(false);
-            this.error.set('Could not switch algorithm. Please try again.');
-          },
-        });
-    } else {
-      doSign();
-    }
+        },
+      });
   }
 
   downloadSignedDocument(): void {
     const url = this.signedPackageUrl();
     if (!url) return;
+    
+    let baseName = 'signed_document';
+    if (this.selectedFile) {
+      const originalName = this.selectedFile.name;
+      const lastDot = originalName.lastIndexOf('.');
+      if (lastDot > 0) {
+        baseName = 'signed_document_' + originalName.substring(0, lastDot);
+      } else {
+        baseName = 'signed_document_' + originalName;
+      }
+    }
+    
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'signed_document.json';
+    a.download = `${baseName}.json`;
     a.click();
   }
 

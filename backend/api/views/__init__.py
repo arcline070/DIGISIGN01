@@ -13,6 +13,7 @@ from .auth import (
     set_signature_algorithm,
     supported_algorithms,
     timestamp,
+    update_algorithm,
 )
 from .signing import (
     add_document_version,
@@ -29,12 +30,15 @@ from .verification import (
     verify_document,
     verify_qr,
     verify_stored_document,
+    public_verify_token,
 )
 from .export import (
     benchmark_crypto,
     export_signed,
     logs,
 )
+
+from .benchmark import system_benchmark
 
 __all__ = [
     # Auth
@@ -45,6 +49,7 @@ __all__ = [
     "set_signature_algorithm",
     "supported_algorithms",
     "timestamp",
+    "update_algorithm",
     # Signing
     "sign",
     "sign_document",
@@ -63,4 +68,5 @@ __all__ = [
     "export_signed",
     "logs",
     "benchmark_crypto",
+    "system_benchmark",
 ]

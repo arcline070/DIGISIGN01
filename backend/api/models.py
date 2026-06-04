@@ -1,3 +1,4 @@
+import uuid
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
@@ -103,6 +104,7 @@ class DocumentRecord(models.Model):
     """
 
     doc_id = models.CharField(max_length=128, unique=True)
+    verification_token = models.UUIDField(default=uuid.uuid4, unique=True)
     owner = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
