@@ -48,6 +48,32 @@ export class SignComponent implements OnInit {
       const marginX = (pdfWidth - imgWidth) / 2;
 
       pdf.addImage(imgData, 'PNG', marginX, 10, imgWidth, imgHeight);
+
+      // --- BEGIN REPEATING WATERMARK INJECTION ---
+      // Set a darker, more visible gray color
+      pdf.setTextColor(150, 150, 150); 
+
+      // Apply higher opacity so the watermark is clearly visible
+      pdf.setGState(new (pdf.GState as any)({ opacity: 0.35 })); 
+
+      // Set a larger font size for the repeating pattern
+      pdf.setFontSize(22);
+
+      // The exact symbol and text requested
+      const watermarkText = '© DIGISIGN_VERIFIED'; 
+
+      // Spacing between the tiled text
+      const stepX = 80; 
+      const stepY = 80;
+
+      // Loop diagonally over the entire A4 canvas bounds
+      for (let x = -pdfWidth; x < pdfWidth * 2; x += stepX) {
+          for (let y = -pdfHeight; y < pdfHeight * 2; y += stepY) {
+              pdf.text(watermarkText, x, y, { angle: 45 });
+          }
+      }
+      // --- END REPEATING WATERMARK INJECTION ---
+
       pdf.save('Certified_Document.pdf');
     });
   }
