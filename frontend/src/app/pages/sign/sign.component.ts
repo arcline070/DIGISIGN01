@@ -50,21 +50,22 @@ export class SignComponent implements OnInit {
       pdf.addImage(imgData, 'PNG', marginX, 10, imgWidth, imgHeight);
 
       // --- BEGIN REPEATING WATERMARK INJECTION ---
-      // Set a darker, more visible gray color
-      pdf.setTextColor(150, 150, 150); 
+      // Set a clean, professional gray color
+      pdf.setTextColor(180, 180, 180); 
 
-      // Apply higher opacity so the watermark is clearly visible
-      pdf.setGState(new (pdf.GState as any)({ opacity: 0.35 })); 
+      // Apply low opacity so the JSON payload underneath remains perfectly readable
+      pdf.setGState(new (pdf.GState as any)({ opacity: 0.15 })); 
 
-      // Set a larger font size for the repeating pattern
-      pdf.setFontSize(22);
+      // Set a larger, bold font for the repeating pattern
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(24);
 
       // The exact symbol and text requested
       const watermarkText = '© DIGISIGN_VERIFIED'; 
 
       // Spacing between the tiled text
-      const stepX = 80; 
-      const stepY = 80;
+      const stepX = 110; 
+      const stepY = 110;
 
       // Loop diagonally over the entire A4 canvas bounds
       for (let x = -pdfWidth; x < pdfWidth * 2; x += stepX) {
