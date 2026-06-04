@@ -1,0 +1,265 @@
+.dashboard-container {
+  padding: 2rem;
+  background-color: #0f172a;
+  min-height: 100vh;
+  color: #f8fafc;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.dashboard-header {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 1rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: -0.025em;
+}
+
+.dashboard-header p {
+  margin: 0.5rem 0 0;
+  color: #94a3b8;
+  font-size: 1.1rem;
+}
+
+/* Row 1: HUD Grid */
+.hud-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.metric-card {
+  background: linear-gradient(145deg, #1e293b, #0f172a);
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+  border-color: #475569;
+}
+
+.metric-card.highlight {
+  border-color: #10b981;
+  background: linear-gradient(145deg, #064e3b, #022c22);
+}
+
+.metric-card h3 {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #cbd5e1;
+}
+
+.metric-card .value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #f8fafc;
+  line-height: 1;
+}
+
+.metric-card .value.secure {
+  color: #34d399;
+}
+
+/* Common Panels */
+.panel {
+  background-color: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.5);
+}
+
+.panel h2 {
+  margin: 0 0 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 0.75rem;
+}
+
+/* Row 2: Split View */
+.split-view {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+/* Tables */
+.table-responsive {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table th,
+.data-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #334155;
+}
+
+.data-table th {
+  background-color: #0f172a;
+  color: #94a3b8;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.data-table tr:hover {
+  background-color: #334155;
+}
+
+.mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  color: #cbd5e1;
+}
+
+.status-success {
+  color: #34d399;
+  font-weight: 600;
+}
+
+.status-failed {
+  color: #f87171;
+  font-weight: 600;
+}
+
+.reason-text {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Chart */
+.chart-wrapper {
+  position: relative;
+  height: 300px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Buttons */
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-approve {
+  background-color: #10b981;
+  color: #ffffff;
+}
+
+.btn-approve:hover {
+  background-color: #059669;
+}
+
+.btn-reject {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.btn-reject:hover {
+  background-color: #dc2626;
+}
+
+/* Badges & Dots */
+.badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.badge-admin {
+  background-color: #3b82f6;
+  color: #eff6ff;
+}
+
+.badge-user {
+  background-color: #475569;
+  color: #f8fafc;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 6px;
+}
+
+.dot-active {
+  background-color: #10b981;
+}
+
+.dot-inactive {
+  background-color: #64748b;
+}
+
+.empty-state {
+  text-align: center;
+  color: #94a3b8;
+  padding: 2rem !important;
+  font-style: italic;
+}
+
+/* Error State */
+.error-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #0f172a;
+}
+
+.error-box {
+  background-color: #1e293b;
+  border: 1px solid #ef4444;
+  border-radius: 12px;
+  padding: 2rem 3rem;
+  text-align: center;
+  color: #f8fafc;
+}
+
+.error-box h2 {
+  color: #f87171;
+  margin-top: 0;
+}

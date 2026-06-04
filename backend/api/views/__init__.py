@@ -39,6 +39,7 @@ from .export import (
 )
 
 from .benchmark import system_benchmark
+from .dashboard import DashboardSummaryView, UserRosterView, MakerCheckerView
 
 __all__ = [
     # Auth
@@ -64,9 +65,13 @@ __all__ = [
     "verify_chain",
     "verify_qr",
     "integrity_report",
+    "public_verify_token",
     # Export
     "export_signed",
     "logs",
     "benchmark_crypto",
     "system_benchmark",
+    "DashboardSummaryView",
+    "UserRosterView",
+    "MakerCheckerView",
 ]

@@ -29,4 +29,9 @@ urlpatterns = [
     path("verify-stored-document", views.verify_stored_document, name="verify_stored_document"),
     path("verify-and-watermark", views.verify_and_watermark, name="verify_and_watermark"),
     path("documents/verify/", views.public_verify_token, name="public_verify_token"),
+    
+    # SOC Dashboard
+    path("dashboard/summary/", views.DashboardSummaryView.as_view(), name="dashboard-summary"),
+    path("dashboard/users/", views.UserRosterView.as_view(), name="dashboard-users"),
+    path("dashboard/maker-checker/", views.MakerCheckerView.as_view(), name="dashboard-maker-checker"),
 ]

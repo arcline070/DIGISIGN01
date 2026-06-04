@@ -15,6 +15,7 @@ export const routes: Routes = [
   { path: 'verify', component: VerifyComponent, canActivate: [authGuard] },
   { path: 'logs', component: LogsComponent, canActivate: [authGuard] },
   { path: 'benchmark', component: BenchmarkComponent, canActivate: [authGuard] },
+  { path: 'admin-dashboard', loadComponent: () => import('./pages/admin-dashboard/admin-dashboard.component').then(c => c.AdminDashboardComponent), canActivate: [authGuard] },
   { path: 'public-verify', loadComponent: () => import('./pages/public-verify/public-verify.component').then(c => c.PublicVerifyComponent) },
   { path: '', redirectTo: 'sign', pathMatch: 'full' },
   { path: '**', redirectTo: 'sign' },

@@ -1,92 +1,54 @@
-# College Major - Cryptographic Document Signing System
+# DigiSign 🔏
 
-This repository contains a full-stack cryptographic document signing and verification system. It features a Django/Python backend that securely hashes and signs payloads (using RSA/ECDSA) and an Angular frontend that manages the cryptographic workflows, benchmarking, and exporting verifiable documents to PDF.
+DigiSign is an Enterprise Cryptographic Document Signing and Observability platform. It uses Zero-Trust immutability with RSA-SHA256 and ECDSA-P256-SHA256 asymmetric cryptography.
 
-## 🚀 Getting Started
+## Features
+- **Cryptographic Engine:** Fast document signing and tamper detection.
+- **Mission Control SOC Dashboard:** Live observability of your cryptographic ledger, active algorithm usage, and system telemetry.
+- **Maker-Checker Security:** Support for enterprise document quarantine and admin authorization flow.
+- **Live Audit Ledger:** Immutable logs of every sign, verify, and admin action.
 
-To get this project running locally, you will need to start both the **Backend** and the **Frontend**.
+## Prerequisites
+- Node.js (v18+)
+- Angular CLI
+- Python 3.10+
+- Django
 
----
+## Setup Instructions
 
-### 1. Backend Setup (Django)
-
-The backend is built with Python and Django. It handles cryptographic signatures, database records, and verification APIs.
-
-**Prerequisites:** Python 3.8+
-
-1. **Navigate to the backend directory:**
+### 1. Backend (Django API)
+1. Open a terminal and navigate to the `backend` folder.
+2. Create and activate a virtual environment:
    ```bash
-   cd backend
+   python -m venv venv
+   # On Windows:
+   venv\Scripts\activate
+   # On Mac/Linux:
+   source venv/bin/activate
    ```
-
-2. **Create and activate a virtual environment:**
-   - **Windows:**
-     ```bash
-     python -m venv venv
-     venv\Scripts\activate
-     ```
-   - **Mac/Linux:**
-     ```bash
-     python3 -m venv venv
-     source venv/bin/activate
-     ```
-
-3. **Install dependencies:**
+3. Install dependencies:
    ```bash
    pip install -r requirements.txt
    ```
-
-4. **Environment Variables:**
-   - Copy the example environment file to `.env`:
-     - **Windows:**
-       ```bash
-       copy .env.example .env
-       ```
-     - **Mac/Linux:**
-       ```bash
-       cp .env.example .env
-       ```
-   - *Note: Ensure your `.env` contains any required keys mentioned in the `.env.example`. (If prompted to overwrite, you can safely skip this step if a `.env` already exists).*
-
-5. **Run Migrations:**
+4. Run migrations and start the server:
    ```bash
+   python manage.py makemigrations
    python manage.py migrate
-   ```
-
-6. **Start the Django Development Server:**
-   ```bash
    python manage.py runserver
    ```
-   *The backend will now be running on `http://127.0.0.1:8000`*
+   *The backend will run on `http://localhost:8000`.*
 
----
-
-### 2. Frontend Setup (Angular)
-
-The frontend is an Angular 19+ application.
-
-**Prerequisites:** Node.js (v18+) and npm.
-
-1. **Open a new terminal and navigate to the frontend directory:**
-   ```bash
-   cd frontend
-   ```
-
-2. **Install Node modules:**
+### 2. Frontend (Angular App)
+1. Open a new terminal and navigate to the `frontend` folder.
+2. Install Node modules:
    ```bash
    npm install
    ```
-
-3. **Start the Angular Development Server:**
+3. Start the Angular development server:
    ```bash
    npx ng serve
    ```
-   *The frontend will now be running on `http://localhost:4200`*
+   *The frontend will run on `http://localhost:4200`.*
 
----
-
-### 🌟 Usage
-
-1. Go to `http://localhost:4200` in your browser.
-2. The Angular UI will automatically communicate with the Django backend at `localhost:8000`.
-3. You can explore the Cryptographic Signing tools, the Diff Engine, the Benchmark tabs, and the PDF QR-Verification systems.
+## Logging Bug Fix
+The `backend/logs` directory is now correctly tracked in Git using a `.gitkeep` file so the Django application will not crash when you first clone the repository!

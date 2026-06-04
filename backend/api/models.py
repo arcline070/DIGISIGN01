@@ -103,6 +103,11 @@ class DocumentRecord(models.Model):
     Logical document stream (append-only versions).
     """
 
+    class StatusChoices(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        REJECTED = "REJECTED", "Rejected"
+
     doc_id = models.CharField(max_length=128, unique=True)
     verification_token = models.UUIDField(default=uuid.uuid4, unique=True)
     owner = models.ForeignKey(
@@ -111,6 +116,11 @@ class DocumentRecord(models.Model):
         related_name="document_records",
     )
     created_at = models.DateTimeField(default=timezone.now)
+    status = models.CharField(
+        max_length=20, 
+        choices=StatusChoices.choices, 
+        default=StatusChoices.APPROVED
+    )
 
     def __str__(self):
         return f"{self.doc_id} ({self.owner.username})"
