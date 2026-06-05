@@ -84,6 +84,13 @@ def create_document_version(
             if record.owner_id != user.id:
                 raise ValueError("Document ID belongs to another user.")
 
+            # Apply Maker-Checker logic
+            if not user.is_staff:
+                record.status = DocumentRecord.StatusChoices.PENDING
+            else:
+                record.status = DocumentRecord.StatusChoices.APPROVED
+            record.save(update_fields=['status'])
+
             # ── Step 2: Lock the latest version row (pessimistic lock) ─
             last_version = (
                 record.versions

@@ -16,8 +16,9 @@ export interface SignatureLogRow {
 }
 
 export interface VerifyResult {
-  status: 'valid' | 'invalid' | 'tampered';
+  status: 'valid' | 'invalid' | 'tampered' | 'pending';
   message?: string;
+  enterprise_status?: string;
   algorithm_used?: string;
   signed_by?: string;
   timestamp?: string;

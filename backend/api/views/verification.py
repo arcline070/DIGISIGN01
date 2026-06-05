@@ -119,15 +119,26 @@ def verify_document(request):
         computed_hash = details.get("hash", "")
         doc_id = str(package.get("document_id") or "").strip()
 
+        # Check for PENDING state
+        doc_status = DocumentRecord.StatusChoices.APPROVED # Default
+        if doc_id:
+            rec_check = DocumentRecord.objects.filter(doc_id=doc_id).first()
+            if rec_check:
+                doc_status = rec_check.status
+
         # Record audit log
         if request.user.is_authenticated:
+            failure_reason = "" if ok else details.get("message", "Verification failed")
+            if ok and doc_status == DocumentRecord.StatusChoices.PENDING:
+                failure_reason = "Verified (Pending Admin Approval)"
+                
             AuditLog.objects.create(
                 user=request.user,
                 action=AuditLog.Action.VERIFY,
                 status=AuditLog.Status.SUCCESS if ok else AuditLog.Status.FAILED,
                 data_hash=computed_hash,
                 ip_address=_request_ip(request),
-                failure_reason="" if ok else details.get("message", "Verification failed"),
+                failure_reason=failure_reason,
             )
 
         # PHASE 3: Build chain verification.
@@ -189,12 +200,21 @@ def verify_document(request):
                 original_data_is_binary = True
                 
             verification_details = _build_verification_details(package)
+            
+            if doc_status == DocumentRecord.StatusChoices.PENDING:
+                response_status = "pending"
+                response_message = "Cryptographic Signature is Valid, but the document is PENDING ENTERPRISE APPROVAL."
+            else:
+                response_status = "valid"
+                response_message = "Document Integrity Verified"
+
             return Response(
                 {
-                    "status": "valid",
-                    "message": "Document Integrity Verified",
+                    "status": response_status,
+                    "message": response_message,
                     "algorithm_used": details.get("signature_algorithm", ""),
                     "verification_details": verification_details,
+                    "enterprise_status": doc_status,
                     "original_data": original_text,
                     "original_data_is_binary": original_data_is_binary,
                     "chain_verification": chain_verification,

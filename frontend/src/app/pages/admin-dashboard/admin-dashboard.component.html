@@ -1,7 +1,7 @@
 <div class="dashboard-container" *ngIf="!error">
   <div class="dashboard-header">
-    <h1><i class="fa fa-shield"></i> Cryptographic SOC Mission Control</h1>
-    <p>Enterprise Security Administration</p>
+    <h1><i class="fa fa-shield"></i> Admin Dashboard</h1>
+    <p>Security Administration</p>
   </div>
 
   <div *ngIf="summary" class="dashboard-content">
@@ -13,7 +13,7 @@
         <div class="value">{{ summary.metrics.total_uploads }}</div>
       </div>
       <div class="metric-card">
-        <h3>Signatures Minted</h3>
+        <h3>Documents Signed</h3>
         <div class="value">{{ summary.metrics.signatures_minted }}</div>
       </div>
       <div class="metric-card">
@@ -101,7 +101,7 @@
 
     <!-- Row 4: User Roster -->
     <div class="panel roster-panel">
-      <h2>User Management Roster</h2>
+      <h2>User Directory</h2>
       <div class="table-responsive">
         <table class="data-table">
           <thead>

@@ -13,7 +13,10 @@
   font-size: 1.65rem;
   font-weight: 800;
   letter-spacing: -0.03em;
-  color: var(--slate-900);
+  background: linear-gradient(135deg, var(--brand-700) 0%, #8b5cf6 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0 0 0.35rem;
 }
 
@@ -33,7 +36,7 @@
   background: var(--surface-card);
   border-radius: var(--radius-lg);
   padding: 1.75rem;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-lg);
   border: 1px solid var(--surface-border);
 }
 
@@ -48,14 +51,14 @@
 }
 
 .upload-zone:hover {
-  border-color: var(--emerald-400);
-  background: rgba(16, 185, 129, 0.03);
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
 }
 
 .upload-zone.drag-active {
-  border-color: var(--emerald-500);
-  background: rgba(16, 185, 129, 0.06);
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.08);
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.08);
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
 .upload-zone.has-file {
@@ -211,19 +214,36 @@
 }
 
 .btn-verify {
-  background: linear-gradient(135deg, var(--emerald-600) 0%, var(--emerald-500) 100%);
+  background: linear-gradient(135deg, var(--emerald-500) 0%, #059669 100%);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
 }
 
 .btn-verify:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--emerald-700) 0%, var(--emerald-600) 100%);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  transform: translateY(-2px);
 }
 
 .btn-verify:active:not(:disabled) {
   transform: translateY(0);
+}
+
+.btn-download {
+  background: linear-gradient(135deg, var(--emerald-500) 0%, #059669 100%);
+  color: #fff;
+  padding: 0.65rem 1.25rem;
+  font-size: 0.9rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+  display: inline-flex;
+  align-items: center;
+}
+
+.btn-download:hover:not(:disabled) {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35);
+  transform: translateY(-2px);
 }
 
 /* ── Spinner ─────────────────────────────────────── */

@@ -25,13 +25,13 @@
         <span class="nav-icon">📋</span>
         Logs
       </a>
-      <a routerLink="/benchmark" routerLinkActive="active" id="nav-benchmark">
+      <a *ngIf="auth.role() === 'admin'" routerLink="/benchmark" routerLinkActive="active" id="nav-benchmark">
         <span class="nav-icon">📊</span>
         Benchmark
       </a>
       <a *ngIf="auth.role() === 'admin'" routerLink="/admin-dashboard" routerLinkActive="active" id="nav-admin-dashboard">
         <span class="nav-icon">🛡️</span>
-        Mission Control
+        Admin Dashboard
       </a>
     </nav>
 

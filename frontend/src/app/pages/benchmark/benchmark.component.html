@@ -14,7 +14,9 @@
         <p *ngIf="activeTab() === 'chain'"><strong>Diagnostics Scope:</strong> Computes the compounding latency of iterating and validating a historical document chain across exponentially increasing version counts.</p>
       </div>
       <button class="btn btn-primary btn-lg" (click)="runDiagnostics()" [disabled]="loading()">
-        {{ loading() ? '⏳ Running Diagnostics...' : '▶ Run Diagnostics' }}
+        <span *ngIf="loading()" class="sand-timer">⏳</span>
+        <span *ngIf="!loading()">▶</span>
+        {{ loading() ? 'Running Diagnostics...' : 'Run Diagnostics' }}
       </button>
     </div>
 

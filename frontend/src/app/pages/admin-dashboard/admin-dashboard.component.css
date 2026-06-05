@@ -149,10 +149,9 @@
 .reason-text {
   font-size: 0.8rem;
   color: #94a3b8;
-  max-width: 200px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  max-width: 300px;
+  white-space: normal;
+  line-height: 1.4;
 }
 
 /* Chart */

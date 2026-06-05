@@ -7,13 +7,28 @@
   </div>
 
   <section class="card" id="verify-section">
-    <div class="detail-card">
-      <h3 class="detail-title">Upload Signed Package</h3>
-      <p class="page-subtitle">Upload the signed_document generated during signing.</p>
-      <input type="file" accept=".json,application/json" (change)="onSignedPackageChange($event)" #signedPackageInput />
-      <div class="file-info" *ngIf="signedPackageFile">
-        <span class="file-name">{{ signedPackageFile.name }}</span>
-        <button type="button" class="btn btn-secondary btn-sm" (click)="clearSignedPackage()">Remove</button>
+    <div class="upload-zone" [class.has-file]="!!signedPackageFile">
+      <input type="file" class="file-hidden" accept=".json,application/json" (change)="onSignedPackageChange($event)" #signedPackageInput />
+      
+      <div class="upload-content" *ngIf="!signedPackageFile">
+        <div class="upload-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </div>
+        <h3 class="upload-title">Drop your signed package here</h3>
+        <p class="upload-hint">or click to browse — .json accepted</p>
+      </div>
+
+      <div class="file-preview" *ngIf="signedPackageFile">
+        <div class="file-icon-wrap">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        </div>
+        <div class="file-info">
+          <span class="file-name">{{ signedPackageFile.name }}</span>
+          <span class="file-size">{{ (signedPackageFile.size / 1024) | number:'1.0-0' }} KB</span>
+        </div>
+        <button type="button" class="btn-icon remove-file" (click)="clearSignedPackage()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
     </div>
 
@@ -76,9 +91,12 @@
       </div>
     </div>
 
-    <div class="result-section" *ngIf="verifySuccess()">
-      <div class="banner banner-success">
+    <div class="result-section" *ngIf="verifyDetails() && verificationResult?.status !== 'invalid' && verificationResult?.status !== 'tampered'">
+      <div class="banner banner-success" *ngIf="verificationResult?.status === 'valid'">
         <span>✔ Signature Valid — Integrity Verified</span>
+      </div>
+      <div class="banner banner-warning" *ngIf="verificationResult?.status === 'pending'" style="background-color: #ff9800; color: white; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+        <span>⚠️ Cryptographic Signature is Valid, but the document is PENDING ADMIN APPROVAL.</span>
       </div>
       <div class="detail-card verification-details-card" *ngIf="verifyDetails() as d">
         <h3 class="detail-title">Verification Details</h3>
@@ -87,6 +105,13 @@
           <span class="detail-value verification-status-value">
             {{ d.verification_details?.signature_status || 'Verified / Authentic' }}
           </span>
+
+          <ng-container *ngIf="d.enterprise_status">
+            <span class="detail-label">Authorization State</span>
+            <span class="detail-value" [ngStyle]="{'color': d.enterprise_status === 'APPROVED' ? '#00e676' : '#ff9800', 'font-weight': 'bold'}">
+              {{ d.enterprise_status }}
+            </span>
+          </ng-container>
 
           <span class="detail-label">Timestamp</span>
           <span class="detail-value">{{ d.verification_details?.timestamp || 'N/A' }}</span>
@@ -107,7 +132,10 @@
           <span class="detail-value">{{ d.verification_details?.algorithm || d.algorithm_used || 'N/A' }}</span>
         </div>
         <div class="verification-actions">
-          <button type="button" class="btn btn-primary" (click)="downloadOriginal()">Download Original File</button>
+          <button type="button" class="btn btn-download" (click)="downloadOriginal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download Original File
+          </button>
         </div>
       </div>
     </div>

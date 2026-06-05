@@ -141,6 +141,7 @@ def _persist_signing_audit(request, *, user, data_for_log, digest_hex, sig_b64, 
         status=AuditLog.Status.SUCCESS,
         data_hash=digest_hex,
         ip_address=_request_ip(request),
+        failure_reason="Sent for Admin Approval" if not user.is_staff else ""
     )
 
 

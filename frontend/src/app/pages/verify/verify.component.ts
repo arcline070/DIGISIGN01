@@ -68,9 +68,9 @@ export class VerifyComponent {
       .pipe(finalize(() => this.verifyLoading.set(false)))
       .subscribe({
         next: (res: VerifyResult) => {
-          if (res.status === 'valid') {
-            this.verifySuccess.set(true);
-            this.verifyError.set(null);
+          if (res.status === 'valid' || res.status === 'pending') {
+            this.verifySuccess.set(res.status === 'valid');
+            this.verifyError.set(null); // Clear error for pending too since we render a warning banner
             this.verifyDetails.set(res);
           } else {
             this.verifySuccess.set(false);

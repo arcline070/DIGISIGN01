@@ -1,6 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './guards/auth.guard';
 import { guestGuard } from './guards/guest.guard';
+import { adminGuard } from './guards/admin.guard';
 import { LoginComponent } from './pages/login/login.component';
 import { SignComponent } from './pages/sign/sign.component';
 import { VerifyComponent } from './pages/verify/verify.component';
@@ -14,7 +15,7 @@ export const routes: Routes = [
   { path: 'add-version', component: AddVersionComponent, canActivate: [authGuard] },
   { path: 'verify', component: VerifyComponent, canActivate: [authGuard] },
   { path: 'logs', component: LogsComponent, canActivate: [authGuard] },
-  { path: 'benchmark', component: BenchmarkComponent, canActivate: [authGuard] },
+  { path: 'benchmark', component: BenchmarkComponent, canActivate: [adminGuard] },
   { path: 'admin-dashboard', loadComponent: () => import('./pages/admin-dashboard/admin-dashboard.component').then(c => c.AdminDashboardComponent), canActivate: [authGuard] },
   { path: 'public-verify', loadComponent: () => import('./pages/public-verify/public-verify.component').then(c => c.PublicVerifyComponent) },
   { path: '', redirectTo: 'sign', pathMatch: 'full' },
