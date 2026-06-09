@@ -5,6 +5,8 @@ import { environment } from '../../environments/environment';
 
 export interface BenchmarkResult {
   crypto: {
+    rsa_keygen_ms: number;
+    ecdsa_keygen_ms: number;
     rsa_sign_ms: number;
     rsa_verify_ms: number;
     ecdsa_sign_ms: number;

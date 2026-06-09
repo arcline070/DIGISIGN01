@@ -34,7 +34,7 @@ export class PublicVerifyComponent implements OnInit {
   }
 
   private verifyToken(token: string): void {
-    this.http.get<any>(`${environment.apiBaseUrl}/api/documents/verify/?token=${token}`)
+    this.http.get<any>(`${environment.apiBaseUrl}/documents/verify/?token=${token}`)
       .subscribe({
         next: (res) => {
           this.status.set(res.status);

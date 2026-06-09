@@ -60,6 +60,28 @@ def _build_signed_package_payload(
     sig_b64 = base64.b64encode(sig_raw).decode("ascii")
     public_key_pem = extract_pub_from_cert(certificate_pem)
 
+    # --- ADDED FOR LIVE PRESENTATION TRACE ---
+    print("\n\n" + "="*60)
+    print("=== LIVE CRYPTOGRAPHIC PIPELINE TRACE ===")
+    print("="*60)
+    print("\n[1] RAW DATA RECEIVED:")
+    try:
+        print(data_bytes.decode('utf-8')[:500])
+    except:
+        print("<Binary File Data>")
+    
+    print("\n[2] CANONICALIZED FORMAT:")
+    print(structured_snapshot[:500] if structured_snapshot else "<Binary - No Canonicalization Applicable>")
+    
+    print("\n[3] GENERATED SHA-256 HASH:")
+    print(digest_hex)
+    
+    print(f"\n[4] GENERATED ASYMMETRIC SIGNATURE ({algorithm}):")
+    print(sig_b64[:120] + "... [truncated]")
+    print("="*60 + "\n\n")
+    # -----------------------------------------
+
+
     signed_package: dict[str, str] = {
         "document": document_b64,
         "signed_data": document_b64,

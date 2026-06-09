@@ -157,19 +157,19 @@ export class BenchmarkComponent {
 
           // Tab 1: Crypto Chart
           this.cryptoChartData.set({
-            labels: ['Signature Generation', 'Signature Verification'],
+            labels: ['Key Generation', 'Document Signing', 'Signature Verification'],
             datasets: [
               {
-                label: 'RSA-PSS (3072-bit)',
-                data: [res.crypto.rsa_sign_ms, res.crypto.rsa_verify_ms],
+                label: 'RSA-SHA256 (2048-bit)',
+                data: [res.crypto.rsa_keygen_ms, res.crypto.rsa_sign_ms, res.crypto.rsa_verify_ms],
                 backgroundColor: 'rgba(99, 102, 241, 0.8)',
                 borderColor: 'rgba(99, 102, 241, 1)',
                 borderWidth: 2,
                 borderRadius: 4
               },
               {
-                label: 'ECDSA (P-256)',
-                data: [res.crypto.ecdsa_sign_ms, res.crypto.ecdsa_verify_ms],
+                label: 'ECDSA-P256',
+                data: [res.crypto.ecdsa_keygen_ms, res.crypto.ecdsa_sign_ms, res.crypto.ecdsa_verify_ms],
                 backgroundColor: 'rgba(16, 185, 129, 0.8)',
                 borderColor: 'rgba(16, 185, 129, 1)',
                 borderWidth: 2,

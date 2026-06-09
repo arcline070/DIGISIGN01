@@ -293,6 +293,16 @@ def verify_document(request):
             return obj
         tamper_report = _scrub(tamper_report)
 
+        # --- ADDED FOR LIVE PRESENTATION TRACE ---
+        print("\n\n" + "="*60)
+        print("=== LIVE TAMPER LOCALIZATION TRACE ===")
+        print("="*60)
+        print("\n[1] HASH MISMATCH DETECTED (CHAIN COMPROMISED)")
+        print("\n[2] INITIATING SEMANTIC DIFF-ENGINE:")
+        print(json.dumps(tamper_report, indent=2))
+        print("="*60 + "\n\n")
+        # -----------------------------------------
+
         return Response(
             {
                 "status": "tampered",
@@ -919,14 +929,19 @@ def public_verify_token(request):
             return Response({"status": "tampered", "message": "Document empty."}, status=400)
             
         # Re-verify the chain cryptographically
-        result = verify_entire_chain(record.doc_id)
-        if not result["is_valid"]:
+        result = verify_entire_chain(record.pk)
+        if not result.is_valid:
             return Response({"status": "tampered", "message": "Chain corrupted."}, status=400)
             
+        filename = "Unknown Document"
+        if hasattr(latest_version, "artifact") and latest_version.artifact.original_filename:
+            filename = latest_version.artifact.original_filename
+
         # Optional: You could also verify the artifact here if needed, but chain verification is strong enough.
         return Response({
             "status": "authentic", 
             "document_id": record.doc_id,
+            "filename": filename,
             "version": latest_version.version_no,
             "owner": record.owner.username,
             "timestamp": latest_version.created_at

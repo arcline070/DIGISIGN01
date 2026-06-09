@@ -20,6 +20,7 @@
       
       <div style="background: var(--slate-50); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 1.5rem; text-align: left;">
         <p style="margin: 0.5rem 0;"><strong>Document ID:</strong> <span style="font-family: monospace; color: var(--slate-600);">{{ docDetails()?.document_id }}</span></p>
+        <p style="margin: 0.5rem 0;"><strong>Document Name:</strong> <span style="font-family: monospace; color: var(--slate-600);">{{ docDetails()?.filename }}</span></p>
         <p style="margin: 0.5rem 0;"><strong>Version:</strong> {{ docDetails()?.version }}</p>
         <p style="margin: 0.5rem 0;"><strong>Signed By:</strong> {{ docDetails()?.owner }}</p>
         <p style="margin: 0.5rem 0;"><strong>Timestamp:</strong> {{ docDetails()?.timestamp | date:'medium' }}</p>

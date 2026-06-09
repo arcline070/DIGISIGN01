@@ -27,10 +27,18 @@ def system_benchmark(request):
     from cryptography.hazmat.backends import default_backend
 
     iterations = 1000
+    keygen_iterations = 10  # RSA keygen is very slow, keep iterations low
 
-    # Generate keys ONCE, outside any timer
-    rsa_priv_pem, rsa_pub_pem = create_key_pair("RSA-SHA256")
-    ecdsa_priv_pem, ecdsa_pub_pem = create_key_pair("ECDSA-P256-SHA256")
+    # --- Key Generation Benchmarks ---
+    t_start = time.perf_counter()
+    for _ in range(keygen_iterations):
+        rsa_priv_pem, rsa_pub_pem = create_key_pair("RSA-SHA256")
+    rsa_keygen_ms = ((time.perf_counter() - t_start) / keygen_iterations) * 1000
+
+    t_start = time.perf_counter()
+    for _ in range(keygen_iterations):
+        ecdsa_priv_pem, ecdsa_pub_pem = create_key_pair("ECDSA-P256-SHA256")
+    ecdsa_keygen_ms = ((time.perf_counter() - t_start) / keygen_iterations) * 1000
 
     # Load key OBJECTS once — this is not part of the benchmark
     rsa_priv_key = serialization.load_pem_private_key(rsa_priv_pem.encode(), password=None, backend=default_backend())
@@ -134,6 +142,8 @@ def system_benchmark(request):
     return Response(
         {
             "crypto": {
+                "rsa_keygen_ms": rsa_keygen_ms,
+                "ecdsa_keygen_ms": ecdsa_keygen_ms,
                 "rsa_sign_ms": rsa_sign_ms,
                 "rsa_verify_ms": rsa_verify_ms,
                 "ecdsa_sign_ms": ecdsa_sign_ms,

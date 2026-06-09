@@ -106,8 +106,12 @@ def sign_data_with_algorithm(
         password=None,
         backend=default_backend(),
     )
+    
+    import time
+    start_time = time.time()
+    
     if algorithm == "RSA-SHA256":
-        return private_key.sign(
+        sig = private_key.sign(
             payload,
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),
@@ -115,9 +119,15 @@ def sign_data_with_algorithm(
             ),
             hashes.SHA256(),
         )
-    if algorithm == "ECDSA-P256-SHA256":
-        return private_key.sign(payload, ec.ECDSA(hashes.SHA256()))
-    raise ValueError(f"Unsupported algorithm: {algorithm}")
+    elif algorithm == "ECDSA-P256-SHA256":
+        sig = private_key.sign(payload, ec.ECDSA(hashes.SHA256()))
+    else:
+        raise ValueError(f"Unsupported algorithm: {algorithm}")
+        
+    execution_time = (time.time() - start_time) * 1000
+    print(f"\n[CRYPTO BENCHMARK] Algorithm: {algorithm} | Key & Signature Execution Time: {execution_time:.2f} ms\n")
+    
+    return sig
 
 def verify_signature(public_key_pem: str, signature_base64: str, data_bytes: DataInput) -> bool:
     return verify_signature_with_algorithm(
